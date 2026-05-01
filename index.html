@@ -1,0 +1,1743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="FocusTube"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<title>FocusTube — Watch Without Distraction</title>
+
+<!-- PWA manifest injected via JS below -->
+<link id="manifest-link" rel="manifest" href=""/>
+
+<!-- Apple touch icon (inline SVG converted to data URI) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='%23e8ff5a' stroke-width='24'/%3E%3Cpolygon points='220,190 220,322 340,256' fill='%23e8ff5a'/%3E%3C/svg%3E"/>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+
+<style>
+/* ═══════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow:hidden}
+:root{
+  --bg:       #0a0a0a;
+  --bg2:      #111111;
+  --bg3:      #1a1a1a;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.15);
+  --text:     #f0f0ee;
+  --muted:    #888884;
+  --faint:    #444440;
+  --accent:   #e8ff5a;
+  --accent2:  #ff6b35;
+  --danger:   #ff4444;
+  --radius:   16px;
+  --radius-sm:10px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  height:100%;
+  overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ═══════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════ */
+#app{
+  height:100dvh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  position:relative;
+}
+
+/* ── SCREENS ── */
+.screen{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(12px);
+  transition:opacity 0.25s ease, transform 0.25s ease;
+  overflow:hidden;
+}
+
+.screen.active{
+  opacity:1;
+  pointer-events:all;
+  transform:translateY(0);
+}
+
+/* ── SCROLLABLE BODY ── */
+.screen-body{
+  flex:1;
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding-bottom:calc(80px + var(--safe-bot));
+}
+
+/* ── NAV BAR ── */
+.nav{
+  position:fixed;
+  bottom:0;left:0;right:0;
+  height:calc(64px + var(--safe-bot));
+  padding-bottom:var(--safe-bot);
+  background:rgba(10,10,10,0.92);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-around;
+  z-index:100;
+}
+
+.nav-btn{
+  flex:1;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  background:none;
+  border:none;
+  cursor:pointer;
+  color:var(--faint);
+  transition:color 0.15s;
+  padding-bottom:4px;
+}
+
+.nav-btn.active{color:var(--accent);}
+.nav-btn svg{width:22px;height:22px;}
+.nav-btn span{font-size:10px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;}
+
+/* ═══════════════════════════════════════
+   SCREEN: SETUP (API KEY)
+═══════════════════════════════════════ */
+#screen-setup{
+  background:var(--bg);
+  justify-content:center;
+  padding:2rem;
+  gap:0;
+}
+
+.setup-logo{
+  text-align:center;
+  margin-bottom:3rem;
+}
+
+.setup-logo .logo-icon{
+  width:72px;height:72px;
+  background:var(--accent);
+  border-radius:20px;
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 1.25rem;
+}
+
+.setup-logo .logo-icon svg{width:36px;height:36px;fill:var(--bg);}
+
+.setup-logo h1{
+  font-family:'Fraunces',serif;
+  font-size:2.2rem;
+  font-weight:700;
+  letter-spacing:-0.03em;
+  color:var(--text);
+  line-height:1;
+  margin-bottom:0.4rem;
+}
+
+.setup-logo p{
+  font-size:14px;
+  color:var(--muted);
+  font-weight:300;
+}
+
+.setup-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.5rem;
+  margin-bottom:1rem;
+}
+
+.setup-card h2{
+  font-family:'Fraunces',serif;
+  font-size:1.1rem;
+  font-weight:500;
+  margin-bottom:0.75rem;
+  color:var(--text);
+}
+
+.step-list{
+  list-style:none;
+  display:flex;
+  flex-direction:column;
+  gap:0.6rem;
+  margin-bottom:1.25rem;
+}
+
+.step-list li{
+  display:flex;
+  gap:10px;
+  align-items:flex-start;
+  font-size:13.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+.step-num{
+  width:20px;height:20px;
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  border-radius:50%;
+  font-size:10px;
+  font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  color:var(--accent);
+  font-family:'DM Mono',monospace;
+  margin-top:1px;
+}
+
+.step-list a{color:var(--accent);text-decoration:none;}
+.step-list a:hover{text-decoration:underline;}
+
+.input-wrap{position:relative;}
+
+.api-input{
+  width:100%;
+  padding:0.85rem 1rem;
+  background:var(--bg3);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:'DM Mono',monospace;
+  font-size:13px;
+  outline:none;
+  transition:border-color 0.15s;
+  -webkit-appearance:none;
+}
+
+.api-input:focus{border-color:var(--accent);}
+.api-input::placeholder{color:var(--faint);}
+
+.api-input-note{
+  font-size:11px;
+  color:var(--faint);
+  margin-top:0.5rem;
+  font-family:'DM Mono',monospace;
+}
+
+.btn{
+  width:100%;
+  padding:0.9rem;
+  background:var(--accent);
+  color:var(--bg);
+  border:none;
+  border-radius:var(--radius-sm);
+  font-family:'Outfit',sans-serif;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  transition:opacity 0.15s,transform 0.1s;
+  margin-top:1rem;
+  letter-spacing:0.01em;
+}
+
+.btn:active{transform:scale(0.98);opacity:0.9;}
+
+.btn-ghost{
+  background:transparent;
+  color:var(--muted);
+  border:1.5px solid var(--border2);
+}
+
+.error-msg{
+  color:var(--danger);
+  font-size:12px;
+  margin-top:0.5rem;
+  display:none;
+  font-family:'DM Mono',monospace;
+}
+
+/* ═══════════════════════════════════════
+   SCREEN: FEED
+═══════════════════════════════════════ */
+.feed-header{
+  padding:calc(var(--safe-top) + 1.2rem) 1.25rem 1rem;
+  display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+  position:sticky;top:0;z-index:10;
+}
+
+.feed-logo{
+  font-family:'Fraunces',serif;
+  font-size:1.4rem;
+  font-weight:700;
+  letter-spacing:-0.03em;
+  display:flex;align-items:center;gap:8px;
+}
+
+.feed-logo .dot{
+  width:8px;height:8px;
+  background:var(--accent);
+  border-radius:50%;
+  display:inline-block;
+}
+
+.feed-actions{display:flex;gap:8px;}
+
+.icon-btn{
+  width:36px;height:36px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  color:var(--muted);
+  transition:border-color 0.15s,color 0.15s;
+}
+
+.icon-btn:hover{border-color:var(--border2);color:var(--text);}
+.icon-btn svg{width:16px;height:16px;}
+
+/* channel section */
+.channel-section{
+  padding:1.25rem 1.25rem 0.5rem;
+  animation:fadeUp 0.35s ease both;
+}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+.channel-label{
+  display:flex;align-items:center;gap:8px;
+  margin-bottom:0.9rem;
+}
+
+.ch-avatar{
+  width:28px;height:28px;
+  background:var(--bg3);
+  border-radius:50%;
+  overflow:hidden;
+  flex-shrink:0;
+  border:1px solid var(--border);
+}
+
+.ch-avatar img{width:100%;height:100%;object-fit:cover;}
+
+.ch-name{
+  font-size:13px;
+  font-weight:600;
+  color:var(--text);
+  letter-spacing:0.01em;
+}
+
+.ch-link{
+  margin-left:auto;
+  font-size:11px;
+  color:var(--faint);
+  text-decoration:none;
+  font-family:'DM Mono',monospace;
+}
+
+/* video grid — horizontal scroll on mobile */
+.videos-scroll{
+  display:flex;
+  gap:10px;
+  overflow-x:auto;
+  padding-bottom:10px;
+  scroll-snap-type:x mandatory;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+
+.videos-scroll::-webkit-scrollbar{display:none;}
+
+.video-thumb{
+  flex-shrink:0;
+  width:200px;
+  scroll-snap-align:start;
+  cursor:pointer;
+  border-radius:var(--radius-sm);
+  overflow:hidden;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  transition:border-color 0.15s,transform 0.15s;
+}
+
+.video-thumb:active{transform:scale(0.97);}
+.video-thumb:hover{border-color:var(--border2);}
+
+.thumb-img-wrap{
+  position:relative;
+  padding-bottom:56.25%;
+  background:#111;
+}
+
+.thumb-img-wrap img{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  object-fit:cover;
+}
+
+.thumb-duration{
+  position:absolute;
+  bottom:4px;right:4px;
+  background:rgba(0,0,0,0.85);
+  color:#fff;
+  font-size:10px;
+  font-family:'DM Mono',monospace;
+  padding:2px 5px;
+  border-radius:3px;
+}
+
+.thumb-play{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;
+  background:rgba(0,0,0,0.4);
+  transition:opacity 0.15s;
+}
+
+.video-thumb:hover .thumb-play{opacity:1;}
+.thumb-play svg{width:36px;height:36px;fill:white;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.5));}
+
+.thumb-info{padding:0.6rem 0.65rem 0.7rem;}
+
+.thumb-title{
+  font-size:12px;
+  font-weight:500;
+  color:var(--text);
+  line-height:1.4;
+  display:-webkit-box;
+  -webkit-line-clamp:2;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  margin-bottom:0.3rem;
+}
+
+.thumb-meta{
+  font-size:10px;
+  color:var(--faint);
+  font-family:'DM Mono',monospace;
+}
+
+/* skeleton */
+.skeleton-video{
+  flex-shrink:0;width:200px;
+  border-radius:var(--radius-sm);
+  overflow:hidden;
+  background:var(--bg2);
+  border:1px solid var(--border);
+}
+
+.sk-thumb{padding-bottom:56.25%;background:var(--bg3);animation:sk 1.4s ease infinite;}
+.sk-line{height:10px;border-radius:4px;background:var(--bg3);margin:0.6rem 0.65rem 0.3rem;animation:sk 1.4s ease infinite;}
+.sk-line.s{width:55%;margin-bottom:0.65rem;}
+@keyframes sk{0%,100%{opacity:0.4}50%{opacity:0.8}}
+
+.section-divider{height:1px;background:var(--border);margin:1rem 1.25rem 0;}
+
+/* empty feed */
+.empty-feed{
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  height:60vh;
+  gap:1rem;
+  padding:2rem;
+  text-align:center;
+}
+
+.empty-feed .big-icon{font-size:4rem;opacity:0.3;}
+.empty-feed h3{font-family:'Fraunces',serif;font-size:1.4rem;font-weight:500;color:var(--muted);}
+.empty-feed p{font-size:13.5px;color:var(--faint);line-height:1.6;}
+.empty-feed .btn{width:auto;padding:0.75rem 1.75rem;}
+
+/* ═══════════════════════════════════════
+   SCREEN: MY CHANNELS
+═══════════════════════════════════════ */
+.channels-header{
+  padding:calc(var(--safe-top) + 1.2rem) 1.25rem 1rem;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+  position:sticky;top:0;z-index:10;
+  display:flex;align-items:center;justify-content:space-between;
+}
+
+.channels-header h2{
+  font-family:'Fraunces',serif;
+  font-size:1.4rem;
+  font-weight:500;
+  letter-spacing:-0.02em;
+}
+
+.channel-list-item{
+  display:flex;align-items:center;
+  gap:12px;
+  padding:0.9rem 1.25rem;
+  border-bottom:1px solid var(--border);
+  animation:fadeUp 0.3s ease both;
+}
+
+.cli-avatar{
+  width:40px;height:40px;
+  border-radius:50%;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  overflow:hidden;flex-shrink:0;
+}
+
+.cli-avatar img{width:100%;height:100%;object-fit:cover;}
+
+.cli-info{flex:1;min-width:0;}
+
+.cli-name{
+  font-size:14px;font-weight:500;
+  color:var(--text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.cli-handle{
+  font-size:11px;color:var(--faint);
+  font-family:'DM Mono',monospace;
+  margin-top:1px;
+}
+
+.cli-remove{
+  width:32px;height:32px;
+  background:none;border:none;
+  color:var(--faint);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;
+  transition:background 0.15s,color 0.15s;
+}
+
+.cli-remove:hover{background:rgba(255,68,68,0.1);color:var(--danger);}
+.cli-remove svg{width:16px;height:16px;}
+
+.no-channels{
+  padding:3rem 2rem;
+  text-align:center;
+  color:var(--faint);
+  font-size:14px;
+  line-height:1.7;
+}
+
+.add-channel-fab{
+  position:fixed;
+  bottom:calc(72px + var(--safe-bot) + 16px);
+  right:1.25rem;
+  width:52px;height:52px;
+  background:var(--accent);
+  border:none;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  box-shadow:0 4px 20px rgba(232,255,90,0.3);
+  transition:transform 0.15s,box-shadow 0.15s;
+  z-index:50;
+}
+
+.add-channel-fab:active{transform:scale(0.92);}
+.add-channel-fab svg{width:24px;height:24px;fill:var(--bg);}
+
+/* ═══════════════════════════════════════
+   SCREEN: ADD CHANNEL
+═══════════════════════════════════════ */
+.add-header{
+  padding:calc(var(--safe-top) + 1rem) 1.25rem 1rem;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+  background:var(--bg);
+  position:sticky;top:0;z-index:10;
+}
+
+.back-btn{
+  width:36px;height:36px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted);
+  flex-shrink:0;
+}
+
+.back-btn svg{width:18px;height:18px;}
+
+.add-header h2{
+  font-family:'Fraunces',serif;
+  font-size:1.3rem;font-weight:500;
+  letter-spacing:-0.02em;
+}
+
+.add-body{padding:1.5rem 1.25rem;}
+
+.field-label{
+  font-size:12px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:0.5rem;
+  font-family:'DM Mono',monospace;
+}
+
+.text-input{
+  width:100%;
+  padding:0.85rem 1rem;
+  background:var(--bg2);
+  border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);
+  color:var(--text);
+  font-family:'Outfit',sans-serif;
+  font-size:15px;
+  outline:none;
+  transition:border-color 0.15s;
+  -webkit-appearance:none;
+}
+
+.text-input:focus{border-color:var(--accent);}
+.text-input::placeholder{color:var(--faint);}
+
+.input-hint{
+  font-size:12px;color:var(--faint);
+  margin-top:0.4rem;
+  font-family:'DM Mono',monospace;
+}
+
+/* channel preview card */
+.preview-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:1.25rem;
+  margin-top:1.25rem;
+  display:none;
+  animation:fadeUp 0.25s ease;
+}
+
+.preview-card.show{display:flex;gap:12px;align-items:center;}
+
+.preview-avatar{
+  width:52px;height:52px;
+  border-radius:50%;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  overflow:hidden;flex-shrink:0;
+}
+
+.preview-avatar img{width:100%;height:100%;object-fit:cover;}
+
+.preview-info{flex:1;}
+.preview-name{font-size:15px;font-weight:500;color:var(--text);}
+.preview-subs{font-size:12px;color:var(--muted);margin-top:2px;font-family:'DM Mono',monospace;}
+
+.preview-check{
+  width:28px;height:28px;
+  background:var(--accent);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+
+.preview-check svg{width:14px;height:14px;fill:var(--bg);}
+
+.searching-state{
+  padding:1.5rem;
+  text-align:center;
+  color:var(--muted);
+  font-size:13px;
+}
+
+/* ═══════════════════════════════════════
+   VIDEO PLAYER OVERLAY
+═══════════════════════════════════════ */
+#player-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.97);
+  z-index:200;
+  display:flex;flex-direction:column;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.2s;
+}
+
+#player-overlay.open{opacity:1;pointer-events:all;}
+
+.player-top{
+  padding:calc(var(--safe-top) + 0.75rem) 1rem 0.75rem;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+
+.player-channel{
+  font-size:13px;color:var(--muted);
+  font-family:'DM Mono',monospace;
+  letter-spacing:0.04em;
+  text-transform:uppercase;
+}
+
+.close-player{
+  width:36px;height:36px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted);
+}
+
+.close-player svg{width:18px;height:18px;}
+
+.player-video-wrap{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 0 1rem;
+}
+
+.player-video-wrap iframe{
+  width:100%;
+  aspect-ratio:16/9;
+  border:none;
+  max-height:60vh;
+}
+
+.player-info{
+  padding:0 1.25rem calc(var(--safe-bot) + 1rem);
+  flex-shrink:0;
+}
+
+.player-title{
+  font-family:'Fraunces',serif;
+  font-size:1.1rem;
+  font-weight:500;
+  line-height:1.4;
+  color:var(--text);
+  margin-bottom:0.5rem;
+}
+
+.player-meta{
+  font-size:12px;color:var(--muted);
+  font-family:'DM Mono',monospace;
+}
+
+/* ═══════════════════════════════════════
+   SETTINGS SCREEN
+═══════════════════════════════════════ */
+.settings-header{
+  padding:calc(var(--safe-top) + 1.2rem) 1.25rem 1rem;
+  border-bottom:1px solid var(--border);
+  background:var(--bg);
+  position:sticky;top:0;z-index:10;
+}
+
+.settings-header h2{
+  font-family:'Fraunces',serif;
+  font-size:1.4rem;font-weight:500;letter-spacing:-0.02em;
+}
+
+.settings-section{padding:1.25rem;}
+
+.settings-label{
+  font-size:11px;font-weight:600;
+  letter-spacing:0.1em;text-transform:uppercase;
+  color:var(--faint);
+  font-family:'DM Mono',monospace;
+  margin-bottom:0.75rem;
+}
+
+.settings-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+}
+
+.settings-row{
+  display:flex;align-items:center;
+  padding:0.9rem 1.1rem;
+  gap:12px;
+  border-bottom:1px solid var(--border);
+}
+
+.settings-row:last-child{border-bottom:none;}
+
+.settings-row-icon{
+  width:32px;height:32px;
+  background:var(--bg3);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  color:var(--muted);
+}
+
+.settings-row-icon svg{width:16px;height:16px;}
+
+.settings-row-text{flex:1;}
+.settings-row-label{font-size:14px;font-weight:500;color:var(--text);}
+.settings-row-sub{font-size:12px;color:var(--faint);font-family:'DM Mono',monospace;margin-top:1px;}
+
+.settings-row-action{
+  font-size:12px;color:var(--muted);
+  font-family:'DM Mono',monospace;
+}
+
+.btn-danger{background:rgba(255,68,68,0.1);color:var(--danger);border:1.5px solid rgba(255,68,68,0.2);}
+
+/* ═══════════════════════════════════════
+   LOADING SPINNER
+═══════════════════════════════════════ */
+.spin{
+  width:20px;height:20px;
+  border:2px solid var(--border2);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+  display:inline-block;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+#toast{
+  position:fixed;
+  bottom:calc(80px + var(--safe-bot) + 12px);
+  left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--bg3);
+  border:1px solid var(--border2);
+  color:var(--text);
+  padding:0.6rem 1.2rem;
+  border-radius:20px;
+  font-size:13px;
+  font-weight:500;
+  opacity:0;
+  transition:opacity 0.2s,transform 0.2s;
+  z-index:300;
+  white-space:nowrap;
+  pointer-events:none;
+}
+
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ SCREEN: SETUP ══ -->
+  <div class="screen" id="screen-setup">
+    <div class="setup-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="10,8 10,16 16,12"/></svg>
+      </div>
+      <h1>FocusTube</h1>
+      <p>Watch what matters. Nothing else.</p>
+    </div>
+
+    <div class="setup-card">
+      <h2>Sign in with Google</h2>
+      <p style="font-size:13.5px;color:var(--muted);line-height:1.65;margin-bottom:1.25rem">
+        FocusTube uses your Google account to access YouTube.<br/>
+        <strong style="color:var(--text)">We never see your password</strong> — Google handles it securely.<br/>
+        Your watch history and data stay private.
+      </p>
+      <div class="error-msg" id="setup-error" style="margin-bottom:0.75rem"></div>
+      <button class="btn" id="google-signin-btn" onclick="startGoogleAuth()">
+        <span style="display:flex;align-items:center;justify-content:center;gap:10px">
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.6 29.3 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 6 1.1 8.2 3l5.7-5.7C34.3 5.5 29.4 3.5 24 3.5 12.7 3.5 3.5 12.7 3.5 24S12.7 44.5 24 44.5c11 0 20.5-8 20.5-20.5 0-1.4-.1-2.7-.4-4z"/>
+            <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3.1 0 6 1.1 8.2 3l5.7-5.7C34.3 5.5 29.4 3.5 24 3.5c-7.6 0-14.2 4.3-17.7 11.2z"/>
+            <path fill="#4CAF50" d="M24 44.5c5.2 0 10-1.9 13.7-5l-6.3-5.2C29.5 35.8 26.9 37 24 37c-5.2 0-9.6-3.5-11.2-8.3l-6.6 5.1C9.8 40.3 16.5 44.5 24 44.5z"/>
+            <path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.3-2.3 4.2-4.3 5.5l6.3 5.2c3.8-3.5 6.2-8.6 6.2-14.7 0-1.4-.1-2.7-.4-4z"/>
+          </svg>
+          Continue with Google
+        </span>
+      </button>
+    </div>
+
+    <div style="text-align:center;padding:0.75rem 1rem 0">
+      <p style="font-size:12px;color:var(--faint);line-height:1.8">
+        🔒 Sign-in is handled entirely by Google<br/>
+        Your credentials never touch our servers<br/>
+        Free to use · No credit card ever needed
+      </p>
+    </div>
+
+    <!-- Advanced: manual API key fallback -->
+    <div style="text-align:center;margin-top:1.5rem">
+      <button onclick="showApiKeyFallback()" style="background:none;border:none;color:var(--faint);font-size:12px;cursor:pointer;text-decoration:underline;font-family:'Outfit',sans-serif">
+        Advanced: use my own API key instead
+      </button>
+    </div>
+
+    <!-- API key fallback (hidden by default) -->
+    <div id="api-key-fallback" style="display:none;padding:0 0 1rem">
+      <div class="setup-card" style="margin-top:1rem">
+        <h2 style="font-size:1rem;margin-bottom:0.75rem">API Key</h2>
+        <input class="api-input" id="api-key-input" type="password"
+          placeholder="AIzaSy..." autocomplete="off" spellcheck="false"/>
+        <div class="api-input-note">From Google Cloud Console → YouTube Data API v3</div>
+        <button class="btn btn-ghost" id="setup-btn" style="margin-top:0.75rem">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: FEED ══ -->
+  <div class="screen" id="screen-feed">
+    <div class="feed-header">
+      <div class="feed-logo">
+        <span class="dot"></span> FocusTube
+      </div>
+      <div class="feed-actions">
+        <button class="icon-btn" id="feed-refresh-btn" title="Refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="screen-body" id="feed-body">
+      <div class="empty-feed" id="feed-empty" style="display:none">
+        <div class="big-icon">📺</div>
+        <h3>No channels yet</h3>
+        <p>Add some YouTube channels to start watching without distractions</p>
+        <button class="btn" style="width:auto;padding:0.75rem 1.75rem" onclick="showScreen('channels')">Add Channels</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: MY CHANNELS ══ -->
+  <div class="screen" id="screen-channels">
+    <div class="channels-header">
+      <h2>My Channels</h2>
+      <span style="font-size:12px;color:var(--faint);font-family:'DM Mono',monospace" id="ch-count">0 channels</span>
+    </div>
+    <div class="screen-body" id="channels-body">
+      <div class="no-channels" id="no-channels">
+        No channels added yet.<br/>Tap + to add your first channel.
+      </div>
+    </div>
+    <button class="add-channel-fab" onclick="showScreen('add')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linecap="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- ══ SCREEN: ADD CHANNEL ══ -->
+  <div class="screen" id="screen-add">
+    <div class="add-header">
+      <button class="back-btn" onclick="showScreen('channels')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <h2>Add Channel</h2>
+    </div>
+    <div class="screen-body">
+      <div class="add-body">
+        <div class="field-label">YouTube Handle or URL</div>
+        <input class="text-input" id="channel-input" type="text"
+          placeholder="@dhruvrathee or channel name"
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+        <div class="input-hint">Type @handle, channel name, or paste a YouTube URL</div>
+
+        <div id="channel-searching" class="searching-state" style="display:none">
+          <div class="spin"></div>
+          <p style="margin-top:0.5rem">Searching...</p>
+        </div>
+
+        <div class="preview-card" id="channel-preview">
+          <div class="preview-avatar"><img id="preview-img" src="" alt=""/></div>
+          <div class="preview-info">
+            <div class="preview-name" id="preview-name"></div>
+            <div class="preview-subs" id="preview-subs"></div>
+          </div>
+          <div class="preview-check">
+            <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+        </div>
+
+        <div class="error-msg" id="add-error" style="margin-top:0.75rem"></div>
+        <button class="btn" id="add-btn" style="display:none">Add Channel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SCREEN: SETTINGS ══ -->
+  <div class="screen" id="screen-settings">
+    <div class="settings-header">
+      <h2>Settings</h2>
+    </div>
+    <div class="screen-body">
+      <div class="settings-section">
+        <div class="settings-label">Account</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <div class="settings-row-text">
+              <div class="settings-row-label">Sign-in</div>
+              <div class="settings-row-sub" id="settings-key-preview">Not set</div>
+            </div>
+            <button class="btn btn-ghost" style="width:auto;padding:0.4rem 0.9rem;font-size:12px;margin:0" onclick="changeApiKey()">Sign out</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="padding-top:0">
+        <div class="settings-label">About</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            </div>
+            <div class="settings-row-text">
+              <div class="settings-row-label">FocusTube</div>
+              <div class="settings-row-sub">Watch without distraction</div>
+            </div>
+            <div class="settings-row-action">v1.0</div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+            </div>
+            <div class="settings-row-text">
+              <div class="settings-row-label">Videos per channel</div>
+              <div class="settings-row-sub">5 latest full videos (Shorts filtered)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section" style="padding-top:0">
+        <div class="settings-label">Data</div>
+        <div class="settings-card">
+          <div class="settings-row">
+            <div class="settings-row-icon" style="color:var(--danger)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
+            </div>
+            <div class="settings-row-text">
+              <div class="settings-row-label" style="color:var(--danger)">Clear all data</div>
+              <div class="settings-row-sub">Removes API key &amp; channels</div>
+            </div>
+            <button class="btn btn-danger" style="width:auto;padding:0.4rem 0.9rem;font-size:12px;margin:0" onclick="clearAllData()">Clear</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BOTTOM NAV ══ -->
+  <nav class="nav" id="main-nav">
+    <button class="nav-btn active" id="nav-feed" onclick="showScreen('feed')">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+      <span>Feed</span>
+    </button>
+    <button class="nav-btn" id="nav-channels" onclick="showScreen('channels')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>Channels</span>
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- ══ VIDEO PLAYER OVERLAY ══ -->
+  <div id="player-overlay">
+    <div class="player-top">
+      <div class="player-channel" id="player-channel-name"></div>
+      <button class="close-player" onclick="closePlayer()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="player-video-wrap">
+      <iframe id="player-iframe" src="" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>
+    </div>
+    <div class="player-info">
+      <div class="player-title" id="player-title"></div>
+      <div class="player-meta" id="player-meta"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   PWA MANIFEST
+═══════════════════════════════════════════ */
+const manifest = {
+  name: 'FocusTube',
+  short_name: 'FocusTube',
+  description: 'Watch YouTube without distraction',
+  start_url: './',
+  display: 'standalone',
+  background_color: '#0a0a0a',
+  theme_color: '#0a0a0a',
+  icons: [{
+    src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='%23e8ff5a' stroke-width='24'/%3E%3Cpolygon points='220,190 220,322 340,256' fill='%23e8ff5a'/%3E%3C/svg%3E",
+    sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable'
+  }]
+};
+const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+document.getElementById('manifest-link').href = URL.createObjectURL(blob);
+
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
+const STORE = {
+  get apiKey(){ return localStorage.getItem('ft_api_key') || '' },
+  set apiKey(v){ localStorage.setItem('ft_api_key', v) },
+  get channels(){ try{ return JSON.parse(localStorage.getItem('ft_channels')||'[]') }catch(e){ return [] } },
+  set channels(v){ localStorage.setItem('ft_channels', JSON.stringify(v)) },
+  get isOAuth(){ return !!localStorage.getItem('ft_oauth') },
+  set isOAuth(v){ v ? localStorage.setItem('ft_oauth','1') : localStorage.removeItem('ft_oauth') },
+};
+
+let currentScreen = '';
+let foundChannel  = null;
+
+/* Video cache — persisted in localStorage with 3-hour expiry.
+   Reopening the app doesn't burn API quota again. */
+const CACHE_TTL = 3 * 60 * 60 * 1000;
+
+function getCachedVideos(channelId){
+  try{
+    const raw = localStorage.getItem('ft_vc_' + channelId);
+    if(!raw) return null;
+    const {ts, videos} = JSON.parse(raw);
+    if(Date.now() - ts > CACHE_TTL) return null;
+    return videos;
+  } catch(e){ return null; }
+}
+
+function setCachedVideos(channelId, videos){
+  try{
+    localStorage.setItem('ft_vc_'+channelId, JSON.stringify({ts:Date.now(), videos}));
+  } catch(e){}
+}
+
+function clearVideoCache(){
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('ft_vc_'))
+    .forEach(k => localStorage.removeItem(k));
+}
+
+/* ═══════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════ */
+const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').trim();
+
+function toast(msg, dur=2200){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function timeAgo(iso){
+  if(!iso) return '';
+  const s = Math.floor((Date.now() - new Date(iso))/1000);
+  if(s < 3600)  return Math.floor(s/60)  + 'm ago';
+  if(s < 86400) return Math.floor(s/3600) + 'h ago';
+  if(s < 604800)return Math.floor(s/86400)+ 'd ago';
+  return new Date(iso).toLocaleDateString('en-AU',{day:'numeric',month:'short'});
+}
+
+function fmtDuration(iso){
+  // ISO 8601 duration: PT4M13S
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if(!m) return '';
+  const h=parseInt(m[1]||0), min=parseInt(m[2]||0), s=parseInt(m[3]||0);
+  if(h) return `${h}:${String(min).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  return `${min}:${String(s).padStart(2,'0')}`;
+}
+
+function durationSeconds(iso){
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+  if(!m) return 999;
+  return (parseInt(m[1]||0)*3600) + (parseInt(m[2]||0)*60) + parseInt(m[3]||0);
+}
+
+function formatSubs(n){
+  n = parseInt(n);
+  if(n >= 1e6) return (n/1e6).toFixed(1)+'M subscribers';
+  if(n >= 1e3) return (n/1e3).toFixed(0)+'K subscribers';
+  return n+' subscribers';
+}
+
+/* ═══════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════ */
+function showScreen(name, opts){
+  // hide all screens
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+  const setupMode = !STORE.apiKey;
+  const screen = setupMode ? 'setup' : name;
+
+  document.getElementById(`screen-${screen}`).classList.add('active');
+  currentScreen = screen;
+
+  // show/hide nav
+  const nav = document.getElementById('main-nav');
+  nav.style.display = (screen === 'setup' || screen === 'add') ? 'none' : 'flex';
+
+  // update nav active state
+  const navMap = {feed:'nav-feed', channels:'nav-channels', settings:'nav-settings'};
+  if(navMap[screen]) document.getElementById(navMap[screen]).classList.add('active');
+
+  // screen-specific init
+  if(screen === 'feed')     initFeed(opts);
+  if(screen === 'channels') initChannels();
+  if(screen === 'settings') initSettings();
+  if(screen === 'add')      initAdd();
+}
+
+/* ═══════════════════════════════════════════
+   SETUP SCREEN
+═══════════════════════════════════════════ */
+/* ═══════════════════════════════════════════
+   GOOGLE OAUTH — sign in without API key
+   Uses Google Identity Services implicit flow.
+   The access token is stored in memory only
+   (not localStorage) for security — user signs
+   in once per session. Channel list persists.
+═══════════════════════════════════════════ */
+
+// Your Google OAuth Client ID
+// TO SET UP: go to console.cloud.google.com → APIs & Services → Credentials
+// → Create OAuth 2.0 Client ID → Web application
+// → Add your hosted URL to "Authorized JavaScript origins"
+// → Paste the client ID below
+const GOOGLE_CLIENT_ID = '9265791897-2kqf021c62uh3q3koc3q9hhu57a9lrrt.apps.googleusercontent.com';
+
+let googleAccessToken = null; // in-memory only, cleared on page close
+let tokenExpiry       = 0;
+
+function showApiKeyFallback(){
+  document.getElementById('api-key-fallback').style.display = 'block';
+}
+
+function startGoogleAuth(){
+  if(!GOOGLE_CLIENT_ID){
+    // No client ID configured — fall through to API key mode
+    showApiKeyFallback();
+    const err = document.getElementById('setup-error');
+    err.textContent = 'OAuth not configured yet. Use API key below, or set up a Client ID.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const params = new URLSearchParams({
+    client_id:     GOOGLE_CLIENT_ID,
+    redirect_uri:  location.origin + location.pathname,
+    response_type: 'token',
+    scope:         'https://www.googleapis.com/auth/youtube.readonly',
+    prompt:        'select_account',
+  });
+  // Save current channels before redirect
+  location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
+}
+
+function handleOAuthCallback(){
+  // Check if we're returning from Google OAuth redirect
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const token = hash.get('access_token');
+  const expiresIn = parseInt(hash.get('expires_in') || '0');
+
+  if(token){
+    googleAccessToken = token;
+    tokenExpiry = Date.now() + (expiresIn * 1000);
+    // Clean the URL
+    history.replaceState(null, '', location.pathname);
+    STORE.isOAuth = true;
+    showScreen('feed');
+    if(!STORE.channels.length) showScreen('channels');
+    return true;
+  }
+  return false;
+}
+
+// API key fallback
+document.getElementById('setup-btn').onclick = async () => {
+  const key = document.getElementById('api-key-input').value.trim();
+  const err  = document.getElementById('setup-error');
+  err.style.display = 'none';
+
+  if(!key.startsWith('AIza') || key.length < 20){
+    err.textContent = 'Invalid key — should start with AIza';
+    err.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('setup-btn');
+  btn.textContent = 'Checking…';
+  btn.disabled = true;
+
+  try{
+    const r = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=id&id=dQw4w9WgXcQ&key=${key}`);
+    const d = await r.json();
+    if(d.error){
+      err.textContent = 'Key rejected: ' + (d.error.message || 'invalid key');
+      err.style.display = 'block';
+      btn.textContent = 'Save Key';
+      btn.disabled = false;
+      return;
+    }
+    STORE.apiKey = key;
+    showScreen('channels');
+    toast('API key saved!');
+  } catch(e){
+    err.textContent = 'Could not verify. Check connection.';
+    err.style.display = 'block';
+    btn.textContent = 'Save Key';
+    btn.disabled = false;
+  }
+};
+
+/* ═══════════════════════════════════════════
+   YOUTUBE API
+═══════════════════════════════════════════ */
+const YT = (path, params) => {
+  const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
+  const headers = {};
+  if(googleAccessToken && Date.now() < tokenExpiry){
+    // OAuth mode — use Bearer token, no API key needed
+    headers['Authorization'] = 'Bearer ' + googleAccessToken;
+  } else {
+    // API key mode fallback
+    url.searchParams.set('key', STORE.apiKey);
+  }
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
+  return fetch(url, {headers}).then(async r => {
+    const d = await r.json();
+    // If token expired mid-session, re-auth
+    if(d.error?.status === 'UNAUTHENTICATED' && STORE.isOAuth){
+      googleAccessToken = null;
+      startGoogleAuth();
+    }
+    return d;
+  });
+};
+
+async function searchChannel(query){
+  // Try as handle first (strip @ if present)
+  const handle = query.trim().replace(/^@/,'').replace(/.*youtube\.com\/@?/,'').split('/')[0].split('?')[0];
+
+  // Search for channel
+  const data = await YT('search', {
+    part:'snippet', type:'channel', q:handle, maxResults:1
+  });
+
+  if(!data.items?.length) throw new Error('Channel not found');
+
+  const item = data.items[0];
+  const channelId = item.snippet.channelId;
+
+  // Get full channel details (for subscriber count & avatar)
+  const detail = await YT('channels', {
+    part:'snippet,statistics', id:channelId
+  });
+
+  if(!detail.items?.length) throw new Error('Could not load channel details');
+
+  const ch = detail.items[0];
+  return {
+    id:     channelId,
+    name:   ch.snippet.title,
+    handle: ch.snippet.customUrl || handle,
+    avatar: ch.snippet.thumbnails?.medium?.url || ch.snippet.thumbnails?.default?.url || '',
+    subs:   ch.statistics?.subscriberCount || '0',
+  };
+}
+
+async function fetchVideos(channelId, uploadsPlaylistId){
+  /* QUOTA SAVING:
+     OLD: search.list = 100 units per call (very expensive)
+     NEW: playlistItems.list = 1 unit per call (100x cheaper!)
+     Total per channel: 2 units (playlist + video details)
+     vs old: 200 units (search + video details)
+  */
+  const playlistId = uploadsPlaylistId || ('UU' + channelId.slice(2));
+
+  // Fetch 25 latest uploads — 1 unit only!
+  const playlist = await YT('playlistItems', {
+    part: 'contentDetails',
+    playlistId,
+    maxResults: 25,
+  });
+
+  if(!playlist.items?.length) return [];
+
+  const ids = playlist.items.map(i => i.contentDetails.videoId).join(',');
+
+  // Get video details including duration — 1 unit
+  const details = await YT('videos', {
+    part: 'snippet,contentDetails',
+    id: ids,
+  });
+
+  return (details.items || [])
+    .filter(v => {
+      const secs = durationSeconds(v.contentDetails?.duration || 'PT0S');
+      return secs > 180; // Filter Shorts ≤3 mins
+    })
+    .slice(0, 5)
+    .map(v => ({
+      id:          v.id,
+      title:       v.snippet.title,
+      thumb:       v.snippet.thumbnails?.medium?.url || v.snippet.thumbnails?.default?.url || '',
+      duration:    fmtDuration(v.contentDetails?.duration || ''),
+      publishedAt: v.snippet.publishedAt,
+      channelName: v.snippet.channelTitle,
+    }));
+}
+
+/* ═══════════════════════════════════════════
+   FEED SCREEN
+═══════════════════════════════════════════ */
+function channelBlockHTML(ch, i){
+  return `<div class="channel-section" id="feed-ch-${ch.id}">
+      <div class="channel-label">
+        <div class="ch-avatar">
+          ${ch.avatar ? `<img src="${esc(ch.avatar)}" alt=""/>` : ''}
+        </div>
+        <span class="ch-name">${esc(ch.name)}</span>
+        <a class="ch-link" href="https://www.youtube.com/${esc(ch.handle)}" target="_blank" rel="noopener">YouTube ↗</a>
+      </div>
+      <div class="videos-scroll" id="videos-${ch.id}">
+        ${[0,1,2,3,4].map(()=>`
+          <div class="skeleton-video">
+            <div class="sk-thumb"></div>
+            <div class="sk-line"></div>
+            <div class="sk-line s"></div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
+async function loadChannelVideos(ch){
+  try{
+    let videos = getCachedVideos(ch.id);
+    if(!videos){
+      videos = await fetchVideos(ch.id, ch.uploadsId);
+      setCachedVideos(ch.id, videos);
+    }
+    renderVideos(ch, videos);
+  } catch(e){
+    const el = document.getElementById(`videos-${ch.id}`);
+    if(el) el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">Could not load videos</div>`;
+  }
+}
+
+async function initFeed(newChannelId){
+  const channels = STORE.channels;
+  const body     = document.getElementById('feed-body');
+  const empty    = document.getElementById('feed-empty');
+
+  if(!channels.length){
+    body.innerHTML = '';
+    body.appendChild(empty);
+    empty.style.display = 'flex';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  if(newChannelId){
+    // ── Incremental update: only add the new channel, don't rebuild everything ──
+    const ch  = channels.find(c => c.id === newChannelId);
+    if(!ch) return;
+
+    // Remove existing divider at end if present, we'll re-add
+    const lastDivider = body.querySelector('.section-divider:last-of-type');
+
+    // Insert divider before new channel if there are already channels shown
+    const existingBlocks = body.querySelectorAll('.channel-section');
+    if(existingBlocks.length > 0){
+      const div = document.createElement('div');
+      div.className = 'section-divider';
+      body.appendChild(div);
+    }
+
+    // Append new channel block
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = channelBlockHTML(ch, channels.length - 1);
+    const block = wrapper.firstElementChild;
+    block.style.animation = 'fadeUp 0.35s ease both';
+    body.appendChild(block);
+
+    // Fetch only this channel's videos
+    loadChannelVideos(ch);
+    return;
+  }
+
+  // ── Full rebuild (first load or manual refresh) ──
+  body.innerHTML = channels.map((ch, i) => `
+    ${channelBlockHTML(ch, i)}
+    ${i < channels.length-1 ? '<div class="section-divider"></div>' : ''}
+  `).join('');
+
+  // Fetch all channels
+  channels.forEach(ch => loadChannelVideos(ch));
+}
+
+function renderVideos(ch, videos){
+  const el = document.getElementById(`videos-${ch.id}`);
+  if(!el) return;
+
+  if(!videos.length){
+    el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">No full videos found</div>`;
+    return;
+  }
+
+  el.innerHTML = videos.map(v => `
+    <div class="video-thumb" onclick="openPlayer('${esc(v.id)}','${esc(v.title.replace(/'/g,"\\'"))}','${esc(ch.name)}','${esc(v.publishedAt)}')">
+      <div class="thumb-img-wrap">
+        <img src="${esc(v.thumb)}" alt="${esc(v.title)}" loading="lazy"/>
+        ${v.duration ? `<span class="thumb-duration">${esc(v.duration)}</span>` : ''}
+        <div class="thumb-play">
+          <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        </div>
+      </div>
+      <div class="thumb-info">
+        <div class="thumb-title">${esc(v.title)}</div>
+        <div class="thumb-meta">${timeAgo(v.publishedAt)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('feed-refresh-btn').onclick = () => {
+  clearVideoCache();
+  initFeed();
+  toast('Refreshed!');
+};
+
+/* ═══════════════════════════════════════════
+   VIDEO PLAYER
+═══════════════════════════════════════════ */
+function openPlayer(videoId, title, channelName, publishedAt){
+  const overlay = document.getElementById('player-overlay');
+  document.getElementById('player-iframe').src =
+    `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3`;
+  document.getElementById('player-title').textContent = title;
+  document.getElementById('player-channel-name').textContent = channelName;
+  document.getElementById('player-meta').textContent = timeAgo(publishedAt);
+  overlay.classList.add('open');
+  // prevent body scroll
+  document.body.style.overflow = 'hidden';
+}
+
+function closePlayer(){
+  const overlay = document.getElementById('player-overlay');
+  overlay.classList.remove('open');
+  document.getElementById('player-iframe').src = '';
+  document.body.style.overflow = '';
+}
+
+// Close player on back button / escape
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') closePlayer();
+});
+
+/* ═══════════════════════════════════════════
+   CHANNELS SCREEN
+═══════════════════════════════════════════ */
+function initChannels(){
+  const channels = STORE.channels;
+  const body     = document.getElementById('channels-body');
+  const noEl     = document.getElementById('no-channels');
+  const countEl  = document.getElementById('ch-count');
+
+  countEl.textContent = `${channels.length} channel${channels.length===1?'':'s'}`;
+
+  if(!channels.length){
+    body.innerHTML = '';
+    body.appendChild(noEl);
+    noEl.style.display = 'block';
+    return;
+  }
+
+  noEl.style.display = 'none';
+  body.innerHTML = channels.map((ch, i) => `
+    <div class="channel-list-item" style="animation-delay:${i*40}ms">
+      <div class="cli-avatar">
+        ${ch.avatar ? `<img src="${esc(ch.avatar)}" alt=""/>` : ''}
+      </div>
+      <div class="cli-info">
+        <div class="cli-name">${esc(ch.name)}</div>
+        <div class="cli-handle">${esc(ch.handle)}</div>
+      </div>
+      <button class="cli-remove" onclick="removeChannel('${esc(ch.id)}')" title="Remove">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function removeChannel(id){
+  const channels = STORE.channels.filter(c => c.id !== id);
+  STORE.channels = channels;
+  localStorage.removeItem('ft_vc_' + id);
+  initChannels();
+  toast('Channel removed');
+}
+
+/* ═══════════════════════════════════════════
+   ADD CHANNEL SCREEN
+═══════════════════════════════════════════ */
+let searchTimeout = null;
+
+function initAdd(){
+  foundChannel = null;
+  document.getElementById('channel-input').value = '';
+  document.getElementById('channel-preview').classList.remove('show');
+  document.getElementById('add-btn').style.display = 'none';
+  document.getElementById('add-error').style.display = 'none';
+  document.getElementById('channel-searching').style.display = 'none';
+  setTimeout(() => document.getElementById('channel-input').focus(), 300);
+}
+
+document.getElementById('channel-input').addEventListener('input', e => {
+  clearTimeout(searchTimeout);
+  const q = e.target.value.trim();
+  if(!q){ 
+    document.getElementById('channel-preview').classList.remove('show');
+    document.getElementById('add-btn').style.display = 'none';
+    document.getElementById('add-error').style.display = 'none';
+    return;
+  }
+  searchTimeout = setTimeout(() => doChannelSearch(q), 600);
+});
+
+async function doChannelSearch(query){
+  const searching = document.getElementById('channel-searching');
+  const preview   = document.getElementById('channel-preview');
+  const errEl     = document.getElementById('add-error');
+  const addBtn    = document.getElementById('add-btn');
+
+  searching.style.display = 'block';
+  preview.classList.remove('show');
+  errEl.style.display = 'none';
+  addBtn.style.display = 'none';
+
+  try{
+    const ch = await searchChannel(query);
+    foundChannel = ch;
+
+    // Check if already added
+    const exists = STORE.channels.some(c => c.id === ch.id);
+
+    document.getElementById('preview-img').src   = ch.avatar;
+    document.getElementById('preview-name').textContent = ch.name;
+    document.getElementById('preview-subs').textContent = formatSubs(ch.subs);
+    preview.classList.add('show');
+    searching.style.display = 'none';
+
+    if(exists){
+      addBtn.textContent = 'Already Added';
+      addBtn.disabled = true;
+    } else {
+      addBtn.textContent = `Add ${ch.name}`;
+      addBtn.disabled = false;
+    }
+    addBtn.style.display = 'block';
+
+  } catch(err){
+    searching.style.display = 'none';
+    errEl.textContent = 'Channel not found. Try the exact @handle.';
+    errEl.style.display = 'block';
+    foundChannel = null;
+  }
+}
+
+document.getElementById('add-btn').onclick = () => {
+  if(!foundChannel) return;
+  const channels = STORE.channels;
+  if(channels.some(c => c.id === foundChannel.id)){
+    toast('Already in your list');
+    return;
+  }
+  channels.push(foundChannel);
+  STORE.channels = channels;
+  const addedId = foundChannel.id;
+  toast(`Added ${foundChannel.name}!`);
+  // Pass the new channel ID so feed only loads that channel incrementally
+  showScreen('feed', addedId);
+};
+
+/* ═══════════════════════════════════════════
+   SETTINGS SCREEN
+═══════════════════════════════════════════ */
+function initSettings(){
+  const el = document.getElementById('settings-key-preview');
+  if(googleAccessToken){
+    el.textContent = 'Google OAuth (signed in)';
+  } else {
+    const key = STORE.apiKey;
+    el.textContent = key ? key.slice(0,8)+'…'+key.slice(-4) : 'Not set';
+  }
+}
+
+function changeApiKey(){
+  STORE.apiKey = '';
+  STORE.isOAuth = false;
+  googleAccessToken = null;
+  showScreen('setup');
+}
+
+function clearAllData(){
+  if(!confirm('Clear all data? This removes your API key and all channels.')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+/* ═══════════════════════════════════════════
+   BOOT
+═══════════════════════════════════════════ */
+window.addEventListener('load', () => {
+  // Check if returning from Google OAuth redirect
+  if(location.hash.includes('access_token')){
+    if(handleOAuthCallback()) return;
+  }
+
+  // Already authenticated?
+  if(STORE.apiKey || (STORE.isOAuth && location.hash.includes('access_token'))){
+    showScreen('feed');
+  } else if(STORE.isOAuth){
+    // Was OAuth user but token expired (page reload) — re-auth silently
+    startGoogleAuth();
+  } else {
+    showScreen('setup');
+  }
+});
+
+// Handle Android back button
+window.addEventListener('popstate', () => {
+  const overlay = document.getElementById('player-overlay');
+  if(overlay.classList.contains('open')){
+    closePlayer();
+  } else if(currentScreen === 'add'){
+    showScreen('channels');
+  }
+});
+</script>
+</body>
+</html>
