@@ -1526,8 +1526,7 @@ function renderVideos(ch, videos){
 
 document.getElementById('feed-refresh-btn').onclick = () => {
   clearVideoCache();
-  initFeed();
-  toast('Refreshed!');
+  location.reload();
 };
 
 /* ═══════════════════════════════════════════
@@ -1677,10 +1676,8 @@ document.getElementById('add-btn').onclick = () => {
   }
   channels.push(foundChannel);
   STORE.channels = channels;
-  const addedId = foundChannel.id;
-  toast(`Added ${foundChannel.name}!`);
-  // Pass the new channel ID so feed only loads that channel incrementally
-  showScreen('feed', addedId);
+  // Full browser reload so all channels render correctly, lands on feed
+  location.reload();
 };
 
 /* ═══════════════════════════════════════════
