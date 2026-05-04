@@ -1039,44 +1039,6 @@ body{
     </div>
   </div>
 
-  <!-- ══ SCREEN: SEARCH ══ -->
-  <div class="screen" id="screen-search">
-    <div class="search-header">
-      <h2>Search</h2>
-      <div class="search-row">
-        <input class="search-input" id="search-input" type="search"
-          placeholder="Search YouTube videos…"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-          enterkeyhint="search"/>
-        <button class="search-btn" id="search-btn" onclick="doSearch()">Search</button>
-      </div>
-    </div>
-    <div class="screen-body">
-      <div id="search-results-wrap">
-        <div class="search-empty">
-          <div class="big-icon">🔍</div>
-          <p>Search any topic — shows the top 5 most-viewed videos</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ══ SCREEN: SAVED ══ -->
-  <div class="screen" id="screen-saved">
-    <div class="saved-header">
-      <h2>Saved Videos</h2>
-      <span class="saved-count" id="saved-count">0 saved</span>
-    </div>
-    <div class="screen-body">
-      <div id="saved-wrap">
-        <div class="saved-empty">
-          <div class="big-icon">🔖</div>
-          <p>Tap the bookmark icon on any video to save it here for later</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- ══ BOTTOM NAV ══ -->
   <nav class="nav" id="main-nav">
     <button class="nav-btn active" id="nav-feed" onclick="showScreen('feed')">
@@ -1086,14 +1048,6 @@ body{
     <button class="nav-btn" id="nav-channels" onclick="showScreen('channels')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       <span>Channels</span>
-    </button>
-    <button class="nav-btn" id="nav-search" onclick="showScreen('search')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <span>Search</span>
-    </button>
-    <button class="nav-btn" id="nav-saved" onclick="showScreen('saved')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      <span>Saved</span>
     </button>
     <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -1230,26 +1184,27 @@ function formatSubs(n){
    NAVIGATION
 ═══════════════════════════════════════════ */
 function showScreen(name, opts){
+  // hide all screens
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-  const isAuthed = STORE.apiKey || (googleAccessToken && Date.now() < tokenExpiry) || STORE.isOAuth;
-  const screen = !isAuthed ? 'setup' : name;
+  const setupMode = !STORE.apiKey;
+  const screen = setupMode ? 'setup' : name;
 
   document.getElementById(`screen-${screen}`).classList.add('active');
   currentScreen = screen;
 
+  // show/hide nav
   const nav = document.getElementById('main-nav');
   nav.style.display = (screen === 'setup' || screen === 'add') ? 'none' : 'flex';
 
-  const navMap = {feed:'nav-feed', channels:'nav-channels', search:'nav-search', saved:'nav-saved', settings:'nav-settings'};
+  // update nav active state
+  const navMap = {feed:'nav-feed', channels:'nav-channels', settings:'nav-settings'};
   if(navMap[screen]) document.getElementById(navMap[screen]).classList.add('active');
 
-  // Always re-init every time a screen is shown — no skipping
+  // screen-specific init
   if(screen === 'feed')     initFeed(opts);
   if(screen === 'channels') initChannels();
-  if(screen === 'search')   initSearch();
-  if(screen === 'saved')    initSaved();
   if(screen === 'settings') initSettings();
   if(screen === 'add')      initAdd();
 }
@@ -1361,17 +1316,18 @@ document.getElementById('setup-btn').onclick = async () => {
 ═══════════════════════════════════════════ */
 const YT = (path, params) => {
   const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-  const headers = {'Cache-Control': 'no-cache'};
+  const headers = {};
   if(googleAccessToken && Date.now() < tokenExpiry){
+    // OAuth mode — use Bearer token, no API key needed
     headers['Authorization'] = 'Bearer ' + googleAccessToken;
   } else {
+    // API key mode fallback
     url.searchParams.set('key', STORE.apiKey);
   }
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
-  // Add timestamp to bust mobile browser HTTP cache
-  url.searchParams.set('_ts', Date.now());
-  return fetch(url, {headers, cache: 'no-store'}).then(async r => {
+  return fetch(url, {headers}).then(async r => {
     const d = await r.json();
+    // If token expired mid-session, re-auth
     if(d.error?.status === 'UNAUTHENTICATED' && STORE.isOAuth){
       googleAccessToken = null;
       startGoogleAuth();
@@ -1477,20 +1433,16 @@ function channelBlockHTML(ch, i){
 }
 
 async function loadChannelVideos(ch){
-  // Render from cache instantly if available (no skeleton flash)
-  const cached = getCachedVideos(ch.id);
-  if(cached){
-    renderVideos(ch, cached);
-    return; // skip network call — cache still valid
-  }
-  // No cache — fetch from YouTube API
   try{
-    const videos = await fetchVideos(ch.id, ch.uploadsId);
-    setCachedVideos(ch.id, videos);
+    let videos = getCachedVideos(ch.id);
+    if(!videos){
+      videos = await fetchVideos(ch.id, ch.uploadsId);
+      setCachedVideos(ch.id, videos);
+    }
     renderVideos(ch, videos);
   } catch(e){
     const el = document.getElementById(`videos-${ch.id}`);
-    if(el) el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">Could not load videos — tap refresh to retry</div>`;
+    if(el) el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">Could not load videos</div>`;
   }
 }
 
@@ -1508,25 +1460,42 @@ async function initFeed(newChannelId){
 
   empty.style.display = 'none';
 
-  // Always do a full rebuild — this ensures Channels tab additions
-  // always show up correctly. Speed comes from localStorage video cache,
-  // not from skipping DOM rebuilds.
+  if(newChannelId){
+    // ── Incremental update: only add the new channel, don't rebuild everything ──
+    const ch  = channels.find(c => c.id === newChannelId);
+    if(!ch) return;
+
+    // Remove existing divider at end if present, we'll re-add
+    const lastDivider = body.querySelector('.section-divider:last-of-type');
+
+    // Insert divider before new channel if there are already channels shown
+    const existingBlocks = body.querySelectorAll('.channel-section');
+    if(existingBlocks.length > 0){
+      const div = document.createElement('div');
+      div.className = 'section-divider';
+      body.appendChild(div);
+    }
+
+    // Append new channel block
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = channelBlockHTML(ch, channels.length - 1);
+    const block = wrapper.firstElementChild;
+    block.style.animation = 'fadeUp 0.35s ease both';
+    body.appendChild(block);
+
+    // Fetch only this channel's videos
+    loadChannelVideos(ch);
+    return;
+  }
+
+  // ── Full rebuild (first load or manual refresh) ──
   body.innerHTML = channels.map((ch, i) => `
     ${channelBlockHTML(ch, i)}
     ${i < channels.length-1 ? '<div class="section-divider"></div>' : ''}
   `).join('');
 
-  if(newChannelId){
-    // New channel added — load ALL channels but new one gets skeleton
-    // while cached ones render instantly from localStorage
-    channels.forEach(ch => loadChannelVideos(ch));
-    // Scroll to the new channel
-    const newBlock = document.getElementById(`feed-ch-${newChannelId}`);
-    if(newBlock) setTimeout(() => newBlock.scrollIntoView({behavior:'smooth', block:'start'}), 100);
-  } else {
-    // Normal load — all from cache or fresh fetch
-    channels.forEach(ch => loadChannelVideos(ch));
-  }
+  // Fetch all channels
+  channels.forEach(ch => loadChannelVideos(ch));
 }
 
 function renderVideos(ch, videos){
@@ -1538,44 +1507,33 @@ function renderVideos(ch, videos){
     return;
   }
 
-  el.innerHTML = videos.map(v => {
-    const saved = isSaved(v.id);
-    return `<div class="video-thumb" onclick="openPlayer('${esc(v.id)}','${esc(v.title.replace(/'/g,"\'"))}','${esc(ch.name)}','${esc(v.publishedAt)}','${esc(v.thumb)}')">
+  el.innerHTML = videos.map(v => `
+    <div class="video-thumb" onclick="openPlayer('${esc(v.id)}','${esc(v.title.replace(/'/g,"\\'"))}','${esc(ch.name)}','${esc(v.publishedAt)}')">
       <div class="thumb-img-wrap">
         <img src="${esc(v.thumb)}" alt="${esc(v.title)}" loading="lazy"/>
         ${v.duration ? `<span class="thumb-duration">${esc(v.duration)}</span>` : ''}
         <div class="thumb-play">
           <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         </div>
-        <button class="save-btn ${saved?'saved':''}"
-          onclick="event.stopPropagation();toggleSave('${esc(v.id)}','${esc(v.title.replace(/'/g,"\'"))}','${esc(v.thumb)}','${esc(ch.name)}','${esc(v.publishedAt)}')"
-          title="${saved?'Unsave':'Save'}">
-          <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-        </button>
       </div>
       <div class="thumb-info">
         <div class="thumb-title">${esc(v.title)}</div>
         <div class="thumb-meta">${timeAgo(v.publishedAt)}</div>
       </div>
-    </div>`;
-  }).join('');
+    </div>
+  `).join('');
 }
 
-document.getElementById('feed-refresh-btn').onclick = async () => {
-  const btn = document.getElementById('feed-refresh-btn');
-  btn.style.opacity = '0.4';
-  btn.style.pointerEvents = 'none';
+document.getElementById('feed-refresh-btn').onclick = () => {
   clearVideoCache();
-  await initFeed();
-  btn.style.opacity = '';
-  btn.style.pointerEvents = '';
-  toast('Feed refreshed!');
+  initFeed();
+  toast('Refreshed!');
 };
 
 /* ═══════════════════════════════════════════
    VIDEO PLAYER
 ═══════════════════════════════════════════ */
-function openPlayer(videoId, title, channelName, publishedAt, thumb){
+function openPlayer(videoId, title, channelName, publishedAt){
   const overlay = document.getElementById('player-overlay');
   document.getElementById('player-iframe').src =
     `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3`;
@@ -1749,149 +1707,6 @@ function clearAllData(){
   if(!confirm('Clear all data? This removes your API key and all channels.')) return;
   localStorage.clear();
   location.reload();
-}
-
-/* ═══════════════════════════════════════════
-   SAVED VIDEOS
-═══════════════════════════════════════════ */
-function getSaved(){
-  try{ return JSON.parse(localStorage.getItem('ns_saved')||'[]'); } catch(e){ return []; }
-}
-function setSaved(arr){ localStorage.setItem('ns_saved', JSON.stringify(arr)); }
-function isSaved(id){ return getSaved().some(v => v.id === id); }
-
-function toggleSave(videoId, title, thumb, channelName, publishedAt){
-  let saved = getSaved();
-  const idx = saved.findIndex(v => v.id === videoId);
-  if(idx >= 0){
-    saved.splice(idx, 1);
-    setSaved(saved);
-    toast('Removed from saved');
-  } else {
-    saved.unshift({id:videoId, title, thumb, channelName, publishedAt, savedAt:new Date().toISOString()});
-    setSaved(saved);
-    toast('Saved ✓');
-  }
-  // Update all matching save buttons on screen
-  document.querySelectorAll('.save-btn').forEach(btn => {
-    if(btn.getAttribute('onclick')?.includes(videoId)){
-      const nowSaved = isSaved(videoId);
-      btn.classList.toggle('saved', nowSaved);
-      btn.title = nowSaved ? 'Unsave' : 'Save';
-    }
-  });
-  const countEl = document.getElementById('saved-count');
-  if(countEl) countEl.textContent = getSaved().length + ' saved';
-}
-
-function videoCardHTML(v, onUnsave){
-  const saved = isSaved(v.id);
-  const unsaveExtra = onUnsave ? 'initSaved();' : '';
-  return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;cursor:pointer;position:relative;"
-    onclick="openPlayer('${esc(v.id)}','${esc((v.title||'').replace(/'/g,"\'"))}','${esc(v.channelName||'')}','${esc(v.publishedAt||'')}','${esc(v.thumb||'')}')">
-    <div style="position:relative;padding-bottom:56.25%;height:0;background:#111;">
-      <img src="${esc(v.thumb||'')}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
-      <button class="save-btn ${saved?'saved':''}"
-        onclick="event.stopPropagation();toggleSave('${esc(v.id)}','${esc((v.title||'').replace(/'/g,"\'"))}','${esc(v.thumb||'')}','${esc(v.channelName||'')}','${esc(v.publishedAt||'')}');${unsaveExtra}"
-        title="${saved?'Unsave':'Save'}">
-        <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-      </button>
-    </div>
-    <div style="padding:0.5rem 0.6rem 0.6rem;">
-      <div style="font-size:10px;color:var(--faint);font-family:'DM Mono',monospace;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(v.channelName||'')}</div>
-      <div style="font-size:12px;font-weight:500;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(v.title||'')}</div>
-    </div>
-  </div>`;
-}
-
-function initSaved(){
-  const saved   = getSaved();
-  const wrap    = document.getElementById('saved-wrap');
-  const countEl = document.getElementById('saved-count');
-  if(countEl) countEl.textContent = saved.length + ' saved';
-  if(!saved.length){
-    wrap.innerHTML = `<div class="saved-empty"><div class="big-icon">🔖</div><p>Tap the bookmark icon on any video to save it here for later</p></div>`;
-    return;
-  }
-  wrap.innerHTML = `<div class="saved-grid">${saved.map(v => videoCardHTML(v, true)).join('')}</div>`;
-}
-
-/* ═══════════════════════════════════════════
-   SEARCH
-═══════════════════════════════════════════ */
-function initSearch(){
-  setTimeout(() => document.getElementById('search-input')?.focus(), 300);
-}
-
-document.getElementById('search-input').addEventListener('keydown', e => {
-  if(e.key === 'Enter') doSearch();
-});
-
-async function doSearch(){
-  const q    = document.getElementById('search-input').value.trim();
-  const wrap = document.getElementById('search-results-wrap');
-  const btn  = document.getElementById('search-btn');
-  if(!q) return;
-
-  btn.disabled = true;
-  btn.textContent = '…';
-  wrap.innerHTML = `<div class="search-empty"><div class="spin" style="margin:0 auto 0.5rem"></div><p>Searching…</p></div>`;
-
-  try{
-    // search.list ordered by viewCount — 100 units, user-triggered only
-    const data = await YT('search', {
-      part:'id,snippet', q, type:'video',
-      order:'viewCount', maxResults:5, safeSearch:'moderate',
-    });
-
-    if(!data.items?.length){
-      wrap.innerHTML = `<div class="search-empty"><div class="big-icon">😶</div><p>No results for "<strong>${esc(q)}</strong>"</p></div>`;
-      return;
-    }
-
-    const ids     = data.items.map(i => i.id.videoId).join(',');
-    const details = await YT('videos', {part:'snippet,contentDetails,statistics', id:ids});
-
-    const cards = (details.items||[]).map(v => {
-      const views   = parseInt(v.statistics?.viewCount||0);
-      const viewStr = views >= 1e9 ? (views/1e9).toFixed(1)+'B views'
-                    : views >= 1e6 ? (views/1e6).toFixed(1)+'M views'
-                    : views >= 1e3 ? Math.round(views/1e3)+'K views'
-                    : views+' views';
-      const dur   = fmtDuration(v.contentDetails?.duration||'');
-      const thumb = v.snippet.thumbnails?.medium?.url||v.snippet.thumbnails?.default?.url||'';
-      const saved = isSaved(v.id);
-      return `<div class="search-result-card"
-        onclick="openPlayer('${esc(v.id)}','${esc(v.snippet.title.replace(/'/g,"\'"))}','${esc(v.snippet.channelTitle)}','${esc(v.snippet.publishedAt)}','${esc(thumb)}')">
-        <div style="position:relative;padding-bottom:56.25%;height:0;background:#111;">
-          <img src="${esc(thumb)}" loading="lazy" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;"/>
-          ${dur?`<span class="thumb-duration">${esc(dur)}</span>`:''}
-          <button class="save-btn ${saved?'saved':''}"
-            onclick="event.stopPropagation();toggleSave('${esc(v.id)}','${esc(v.snippet.title.replace(/'/g,"\'"))}','${esc(thumb)}','${esc(v.snippet.channelTitle)}','${esc(v.snippet.publishedAt)}')"
-            title="${saved?'Unsave':'Save'}">
-            <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-          </button>
-        </div>
-        <div style="padding:0.5rem 0.6rem 0.6rem;">
-          <div style="font-size:10px;color:var(--faint);font-family:'DM Mono',monospace;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(v.snippet.channelTitle)}</div>
-          <div style="font-size:12px;font-weight:500;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${esc(v.snippet.title)}</div>
-          <div style="font-size:10px;color:var(--accent);font-family:'DM Mono',monospace;margin-top:3px;">${viewStr}</div>
-        </div>
-      </div>`;
-    }).join('');
-
-    wrap.innerHTML = `
-      <div style="padding:0.75rem 1.25rem 0.25rem;font-size:11px;color:var(--faint);font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;">
-        Top ${details.items?.length||0} most viewed · "${esc(q)}"
-      </div>
-      <div class="search-results-grid">${cards}</div>`;
-
-  } catch(e){
-    wrap.innerHTML = `<div class="search-empty"><div class="big-icon">⚠️</div><p>Search failed. Check your connection and try again.</p></div>`;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'Search';
-  }
 }
 
 /* ═══════════════════════════════════════════
