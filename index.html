@@ -1222,7 +1222,7 @@ function showScreen(name, opts){
 // → Create OAuth 2.0 Client ID → Web application
 // → Add your hosted URL to "Authorized JavaScript origins"
 // → Paste the client ID below
-const GOOGLE_CLIENT_ID = REPLACE_WITH_YOUR_CLIENT_ID;
+const GOOGLE_CLIENT_ID = '9265791897-orf969pe0advpic5ork4lotjjh0j8n0q.apps.googleusercontent.com';
 
 let googleAccessToken = null; // in-memory only, cleared on page close
 let tokenExpiry       = 0;
@@ -1232,7 +1232,7 @@ function showApiKeyFallback(){
 }
 
 function startGoogleAuth(){
-  if(!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'REPLACE_WITH_YOUR_CLIENT_ID'){
+  if(!GOOGLE_CLIENT_ID){
     // No client ID configured — fall through to API key mode
     showApiKeyFallback();
     const err = document.getElementById('setup-error');
