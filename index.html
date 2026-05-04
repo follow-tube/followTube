@@ -119,7 +119,7 @@ body{
   background:none;
   border:none;
   cursor:pointer;
-  color:var(--faint);
+  color:#fff;
   transition:color 0.15s;
   padding-bottom:4px;
 }
@@ -524,7 +524,7 @@ body{
 .cli-remove{
   width:32px;height:32px;
   background:none;border:none;
-  color:var(--faint);cursor:pointer;
+  color:var(--accent);cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   border-radius:50%;
   transition:background 0.15s,color 0.15s;
@@ -1005,9 +1005,8 @@ body{
             </div>
             <div class="settings-row-text">
               <div class="settings-row-label">NoSuggest</div>
-              <div class="settings-row-sub">Watch without distraction</div>
+              <div class="settings-row-sub">Watch YouTube your way. Add only the channels you care about and get a clean, distraction-free feed — no algorithm, no recommendations, no suggested videos, no shorts pulling you down a rabbit hole.</div>
             </div>
-            <div class="settings-row-action">v1.0</div>
           </div>
           <div class="settings-row">
             <div class="settings-row-icon">
@@ -1021,21 +1020,6 @@ body{
         </div>
       </div>
 
-      <div class="settings-section" style="padding-top:0">
-        <div class="settings-label">Data</div>
-        <div class="settings-card">
-          <div class="settings-row">
-            <div class="settings-row-icon" style="color:var(--danger)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2"/></svg>
-            </div>
-            <div class="settings-row-text">
-              <div class="settings-row-label" style="color:var(--danger)">Clear all data</div>
-              <div class="settings-row-sub">Removes API key &amp; channels</div>
-            </div>
-            <button class="btn btn-danger" style="width:auto;padding:0.4rem 0.9rem;font-size:12px;margin:0" onclick="clearAllData()">Clear</button>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1600,8 +1584,7 @@ function removeChannel(id){
   const channels = STORE.channels.filter(c => c.id !== id);
   STORE.channels = channels;
   localStorage.removeItem('ft_vc_' + id);
-  initChannels();
-  toast('Channel removed');
+  location.reload();
 }
 
 /* ═══════════════════════════════════════════
@@ -1702,12 +1685,6 @@ function changeApiKey(){
   STORE.isOAuth = false;
   googleAccessToken = null;
   showScreen('setup');
-}
-
-function clearAllData(){
-  if(!confirm('Clear all data? This removes your API key and all channels.')) return;
-  localStorage.clear();
-  location.reload();
 }
 
 /* ═══════════════════════════════════════════
