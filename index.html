@@ -1191,6 +1191,11 @@ function showScreen(name, opts){
   const setupMode = !STORE.apiKey;
   const screen = setupMode ? 'setup' : name;
 
+  // Persist active tab so browser reloads land on the same screen
+  if(screen !== 'setup' && screen !== 'add'){
+    localStorage.setItem('ns_active_tab', screen);
+  }
+
   document.getElementById(`screen-${screen}`).classList.add('active');
   currentScreen = screen;
 
@@ -1676,7 +1681,6 @@ document.getElementById('add-btn').onclick = () => {
   }
   channels.push(foundChannel);
   STORE.channels = channels;
-  // Full browser reload so all channels render correctly, lands on feed
   location.reload();
 };
 
@@ -1717,7 +1721,8 @@ window.addEventListener('load', () => {
 
   // Already authenticated?
   if(STORE.apiKey || (STORE.isOAuth && location.hash.includes('access_token'))){
-    showScreen('feed');
+    const savedTab = localStorage.getItem('ns_active_tab') || 'feed';
+    showScreen(savedTab);
   } else if(STORE.isOAuth){
     // Was OAuth user but token expired (page reload) — re-auth silently
     startGoogleAuth();
