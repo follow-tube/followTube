@@ -6,9 +6,9 @@
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="FollowTube"/>
+<meta name="apple-mobile-web-app-title" content="NoSuggest"/>
 <meta name="theme-color" content="#0a0a0a"/>
-<title>FollowTube — Watch Without Distraction</title>
+<title>NoSuggest — Watch Without Distraction</title>
 
 <!-- PWA manifest injected via JS below -->
 <link id="manifest-link" rel="manifest" href=""/>
@@ -844,14 +844,14 @@ body{
       <div class="logo-icon">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/><polygon points="10,8 10,16 16,12"/></svg>
       </div>
-      <h1>FollowTube</h1>
+      <h1>NoSuggest</h1>
       <p>Watch what matters. Nothing else.</p>
     </div>
 
     <div class="setup-card">
       <h2>Sign in with Google</h2>
       <p style="font-size:13.5px;color:var(--muted);line-height:1.65;margin-bottom:1.25rem">
-        FollowTube uses your Google account to access YouTube.<br/>
+        NoSuggest uses your Google account to access YouTube.<br/>
         <strong style="color:var(--text)">We never see your password</strong> — Google handles it securely.<br/>
         Your watch history and data stay private.
       </p>
@@ -900,7 +900,7 @@ body{
   <div class="screen" id="screen-feed">
     <div class="feed-header">
       <div class="feed-logo">
-        <span class="dot"></span> FollowTube
+        <span class="dot"></span> NoSuggest
       </div>
       <div class="feed-actions">
         <button class="icon-btn" id="feed-refresh-btn" title="Refresh">
@@ -1004,7 +1004,7 @@ body{
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
             </div>
             <div class="settings-row-text">
-              <div class="settings-row-label">FollowTube</div>
+              <div class="settings-row-label">NoSuggest</div>
               <div class="settings-row-sub">Watch without distraction</div>
             </div>
             <div class="settings-row-action">v1.0</div>
@@ -1081,8 +1081,8 @@ body{
    PWA MANIFEST
 ═══════════════════════════════════════════ */
 const manifest = {
-  name: 'FollowTube',
-  short_name: 'FollowTube',
+  name: 'NoSuggest',
+  short_name: 'NoSuggest',
   description: 'Watch YouTube without distraction',
   start_url: './',
   display: 'standalone',
@@ -1184,25 +1184,22 @@ function formatSubs(n){
    NAVIGATION
 ═══════════════════════════════════════════ */
 function showScreen(name, opts){
-  // hide all screens
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-  const setupMode = !STORE.apiKey;
-  const screen = setupMode ? 'setup' : name;
+  const isAuthed = STORE.apiKey || (googleAccessToken && Date.now() < tokenExpiry) || STORE.isOAuth;
+  const screen = !isAuthed ? 'setup' : name;
 
   document.getElementById(`screen-${screen}`).classList.add('active');
   currentScreen = screen;
 
-  // show/hide nav
   const nav = document.getElementById('main-nav');
   nav.style.display = (screen === 'setup' || screen === 'add') ? 'none' : 'flex';
 
-  // update nav active state
   const navMap = {feed:'nav-feed', channels:'nav-channels', settings:'nav-settings'};
   if(navMap[screen]) document.getElementById(navMap[screen]).classList.add('active');
 
-  // screen-specific init
+  // Always re-init every time a screen is shown — no skipping
   if(screen === 'feed')     initFeed(opts);
   if(screen === 'channels') initChannels();
   if(screen === 'settings') initSettings();
@@ -1225,7 +1222,7 @@ function showScreen(name, opts){
 // → Create OAuth 2.0 Client ID → Web application
 // → Add your hosted URL to "Authorized JavaScript origins"
 // → Paste the client ID below
-const GOOGLE_CLIENT_ID = '9265791897-orf969pe0advpic5ork4lotjjh0j8n0q.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = REPLACE_WITH_YOUR_CLIENT_ID;
 
 let googleAccessToken = null; // in-memory only, cleared on page close
 let tokenExpiry       = 0;
@@ -1235,7 +1232,7 @@ function showApiKeyFallback(){
 }
 
 function startGoogleAuth(){
-  if(!GOOGLE_CLIENT_ID){
+  if(!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'REPLACE_WITH_YOUR_CLIENT_ID'){
     // No client ID configured — fall through to API key mode
     showApiKeyFallback();
     const err = document.getElementById('setup-error');
@@ -1316,18 +1313,17 @@ document.getElementById('setup-btn').onclick = async () => {
 ═══════════════════════════════════════════ */
 const YT = (path, params) => {
   const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
-  const headers = {};
+  const headers = {'Cache-Control': 'no-cache'};
   if(googleAccessToken && Date.now() < tokenExpiry){
-    // OAuth mode — use Bearer token, no API key needed
     headers['Authorization'] = 'Bearer ' + googleAccessToken;
   } else {
-    // API key mode fallback
     url.searchParams.set('key', STORE.apiKey);
   }
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
-  return fetch(url, {headers}).then(async r => {
+  // Add timestamp to bust mobile browser HTTP cache
+  url.searchParams.set('_ts', Date.now());
+  return fetch(url, {headers, cache: 'no-store'}).then(async r => {
     const d = await r.json();
-    // If token expired mid-session, re-auth
     if(d.error?.status === 'UNAUTHENTICATED' && STORE.isOAuth){
       googleAccessToken = null;
       startGoogleAuth();
@@ -1433,16 +1429,20 @@ function channelBlockHTML(ch, i){
 }
 
 async function loadChannelVideos(ch){
+  // Render from cache instantly if available (no skeleton flash)
+  const cached = getCachedVideos(ch.id);
+  if(cached){
+    renderVideos(ch, cached);
+    return; // skip network call — cache still valid
+  }
+  // No cache — fetch from YouTube API
   try{
-    let videos = getCachedVideos(ch.id);
-    if(!videos){
-      videos = await fetchVideos(ch.id, ch.uploadsId);
-      setCachedVideos(ch.id, videos);
-    }
+    const videos = await fetchVideos(ch.id, ch.uploadsId);
+    setCachedVideos(ch.id, videos);
     renderVideos(ch, videos);
   } catch(e){
     const el = document.getElementById(`videos-${ch.id}`);
-    if(el) el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">Could not load videos</div>`;
+    if(el) el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">Could not load videos — tap refresh to retry</div>`;
   }
 }
 
@@ -1460,42 +1460,25 @@ async function initFeed(newChannelId){
 
   empty.style.display = 'none';
 
-  if(newChannelId){
-    // ── Incremental update: only add the new channel, don't rebuild everything ──
-    const ch  = channels.find(c => c.id === newChannelId);
-    if(!ch) return;
-
-    // Remove existing divider at end if present, we'll re-add
-    const lastDivider = body.querySelector('.section-divider:last-of-type');
-
-    // Insert divider before new channel if there are already channels shown
-    const existingBlocks = body.querySelectorAll('.channel-section');
-    if(existingBlocks.length > 0){
-      const div = document.createElement('div');
-      div.className = 'section-divider';
-      body.appendChild(div);
-    }
-
-    // Append new channel block
-    const wrapper = document.createElement('div');
-    wrapper.innerHTML = channelBlockHTML(ch, channels.length - 1);
-    const block = wrapper.firstElementChild;
-    block.style.animation = 'fadeUp 0.35s ease both';
-    body.appendChild(block);
-
-    // Fetch only this channel's videos
-    loadChannelVideos(ch);
-    return;
-  }
-
-  // ── Full rebuild (first load or manual refresh) ──
+  // Always do a full rebuild — this ensures Channels tab additions
+  // always show up correctly. Speed comes from localStorage video cache,
+  // not from skipping DOM rebuilds.
   body.innerHTML = channels.map((ch, i) => `
     ${channelBlockHTML(ch, i)}
     ${i < channels.length-1 ? '<div class="section-divider"></div>' : ''}
   `).join('');
 
-  // Fetch all channels
-  channels.forEach(ch => loadChannelVideos(ch));
+  if(newChannelId){
+    // New channel added — load ALL channels but new one gets skeleton
+    // while cached ones render instantly from localStorage
+    channels.forEach(ch => loadChannelVideos(ch));
+    // Scroll to the new channel
+    const newBlock = document.getElementById(`feed-ch-${newChannelId}`);
+    if(newBlock) setTimeout(() => newBlock.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+  } else {
+    // Normal load — all from cache or fresh fetch
+    channels.forEach(ch => loadChannelVideos(ch));
+  }
 }
 
 function renderVideos(ch, videos){
@@ -1524,10 +1507,15 @@ function renderVideos(ch, videos){
   `).join('');
 }
 
-document.getElementById('feed-refresh-btn').onclick = () => {
+document.getElementById('feed-refresh-btn').onclick = async () => {
+  const btn = document.getElementById('feed-refresh-btn');
+  btn.style.opacity = '0.4';
+  btn.style.pointerEvents = 'none';
   clearVideoCache();
-  initFeed();
-  toast('Refreshed!');
+  await initFeed();
+  btn.style.opacity = '';
+  btn.style.pointerEvents = '';
+  toast('Feed refreshed!');
 };
 
 /* ═══════════════════════════════════════════
