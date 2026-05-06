@@ -543,7 +543,7 @@ body{
 
 .add-channel-fab{
   position:fixed;
-  bottom:calc(64px + var(--safe-bot) + 16px);
+  bottom:calc(var(--safe-bot) + 80px);
   right:1.25rem;
   width:52px;height:52px;
   background:var(--accent);
@@ -2049,6 +2049,7 @@ async function doYTSearch(){
   const empty   = document.getElementById('search-empty');
 
   btn.disabled = true;
+  document.getElementById('search-input').blur();
   loading.style.display = 'block';
   resultsWrap.style.display = 'none';
   errEl.style.display = 'none';
