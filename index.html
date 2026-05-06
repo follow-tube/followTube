@@ -93,6 +93,11 @@ body{
 }
 .screen-body::-webkit-scrollbar{display:none;}
 .screen-body{scrollbar-width:none;}
+@media (max-width: 768px){
+  .screen-body{
+    padding-bottom:calc(120px + var(--safe-bot));
+  }
+}
 
 /* ── NAV BAR ── */
 .nav{
