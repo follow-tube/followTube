@@ -15,6 +15,7 @@
 
 <!-- Apple touch icon (inline SVG converted to data URI) -->
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='%23e8ff5a' stroke-width='24'/%3E%3Cpolygon points='220,190 220,322 340,256' fill='%23e8ff5a'/%3E%3C/svg%3E"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%230a0a0a'/%3E%3Ccircle cx='256' cy='256' r='160' fill='none' stroke='%23e8ff5a' stroke-width='24'/%3E%3Cpolygon points='220,190 220,322 340,256' fill='%23e8ff5a'/%3E%3C/svg%3E" type="image/svg+xml"/>
 
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,700;1,9..144,300&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
@@ -1824,7 +1825,7 @@ function openPlayer(videoId, title, channelName, publishedAt, thumb, duration){
   currentVideoData = {id:videoId, title, channelName, publishedAt, thumb:thumb||'', duration:duration||''};
   const overlay = document.getElementById('player-overlay');
   document.getElementById('player-iframe').src =
-    `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3`;
+    `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&endscreen=0`;
   document.getElementById('player-title').textContent = title;
   document.getElementById('player-channel-name').textContent = channelName;
   document.getElementById('player-meta').textContent = timeAgo(publishedAt);
