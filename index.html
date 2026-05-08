@@ -146,7 +146,11 @@ body{
   padding:2rem;
   gap:0;
   overflow-y:auto;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
 }
+
+#screen-setup::-webkit-scrollbar{display:none;}
 
 .setup-logo{
   text-align:center;
@@ -1504,7 +1508,7 @@ function showScreen(name, opts){
 // → Create OAuth 2.0 Client ID → Web application
 // → Add your hosted URL to "Authorized JavaScript origins"
 // → Paste the client ID below
-const GOOGLE_CLIENT_ID = '9265791897-orf969pe0advpic5ork4lotjjh0j8n0q.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '9265791897-g6hp775nfek790h0rv58k1gd9k5sk8bl.apps.googleusercontent.com';
 
 let googleAccessToken = null; // in-memory only, cleared on page close
 let tokenExpiry       = 0;
