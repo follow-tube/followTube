@@ -39,7 +39,7 @@ Your data lives entirely in your browser's localStorage:
 - Videos you saved
 - A short-lived video cache (cleared every 3 hours)
 
-Your Google OAuth token lives only in memory and is cleared when you close the app.
+Your Google OAuth token lives only in session memory and is cleared when you close the app.
 
 Full details → [nosuggest.com/privacy](https://nosuggest.com/privacy)
 
