@@ -24,7 +24,7 @@ NoSuggest solves this differently. Instead of fighting YouTube's UI, it replaces
 - **Latest videos feed** — see the most recent uploads from your channels in one place
 - **Search** — find any video by keyword or paste a YouTube URL directly
 - **Save for later** — bookmark videos to watch when you have time
-- **No account required on our end** — sign in with Google only to access YouTube's API with your own quota
+- **No account required on our end** — sign in with Google only to access YouTube
 - **PWA** — installable on desktop and mobile, works like a native app
 - **No backend** — everything runs in your browser, nothing stored on our servers
 
