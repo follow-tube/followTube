@@ -19,5 +19,49 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/feed.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your feed, your channels"
+    },
+    {
+      "src": "/screenshots/search.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Search without distraction"
+    },
+    {
+      "src": "/screenshots/saved.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your saved videos"
+    },
+    {
+      "src": "/screenshots/login.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Simple sign in with Google"
+    },
+    {
+      "src": "/screenshots/channels.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your channels list"
+    },
+    {
+      "src": "/screenshots/settings.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "NoSuggest settings"
+    }
   ]
 }
