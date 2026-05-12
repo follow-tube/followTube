@@ -1268,8 +1268,8 @@ body{
           </div>
 		  <a href="https://ko-fi.com/nosuggest" target="_blank" rel="noopener" style="text-decoration:none;display:block;">
           <div class="settings-row" style="cursor:pointer;">
-            <div class="settings-row-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <div class="settings-row-icon" style="color:#ff4444;stroke:#ff4444">
+              <svg viewBox="0 0 24 24" fill="#ff4444" stroke="#ff4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
             </div>
             <div class="settings-row-text">
               <div class="settings-row-label">Support NoSuggest</div>
@@ -1962,11 +1962,11 @@ function openPlayer(videoId, title, channelName, publishedAt, thumb, duration){
     });
   }
 
-  if(ytApiReady){
+  if(typeof YT !== 'undefined' && YT.Player){
     createPlayer();
   } else {
     const wait = setInterval(() => {
-      if(ytApiReady){ clearInterval(wait); createPlayer(); }
+      if(typeof YT !== 'undefined' && YT.Player){ clearInterval(wait); createPlayer(); }
     }, 100);
   }
 }
