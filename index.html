@@ -1097,9 +1097,9 @@ body{
     <div class="setup-card">
       <h2>Sign in with Google</h2>
       <p style="font-size:13.5px;color:var(--muted);line-height:1.65;margin-bottom:1.25rem">
-        NoSuggest uses your Google account to access YouTube.<br/>
-		<strong style="color:var(--text)">We never see your password</strong> — Google handles it securely.<br/>
-		Come when you feel like it. Watch what you chose. Close it and move on.
+        <strong style="color:var(--text)">Channels you add here stay on this device.</strong>
+		<br/>Your phone and laptop can each have their own list, you choose what each one is for.
+		<br/>Come when you feel like it. Watch what you chose. Close it and move on.
       </p>
       <div class="error-msg" id="setup-error" style="margin-bottom:0.75rem"></div>
       <button class="btn" id="google-signin-btn" onclick="startGoogleAuth()">
@@ -1252,8 +1252,9 @@ body{
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
             </div>
             <div class="settings-row-text">
-              <div class="settings-row-label">Videos per channel</div>
-              <div class="settings-row-sub">5 latest full videos (Shorts filtered)</div>
+              <div class="settings-row-label">Per device</div>
+              <div class="settings-row-sub"><strong style="color:var(--text)">Channels you add here stay on this device.</strong>
+			  <br/>Your phone and laptop can each have their own list, you choose what each one is for.</div>
             </div>
           </div>
           <div class="settings-row" id="settings-install-row" style="display:none;cursor:pointer" onclick="triggerInstallFromSettings()">
