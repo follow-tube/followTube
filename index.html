@@ -1641,6 +1641,7 @@ function startGoogleAuth(){
       client_id: GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/youtube.readonly',
       prompt: '',
+	  hint: localStorage.getItem('ns_user_hint') || '',
       callback: (response) => {
         if(response.error){
           const err = document.getElementById('setup-error');
@@ -1653,6 +1654,12 @@ function startGoogleAuth(){
 		localStorage.setItem('ns_token', googleAccessToken);
 		localStorage.setItem('ns_token_expiry', tokenExpiry);
 		STORE.isOAuth = true;
+		// Store email hint for future silent refreshes
+		fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+		  headers: { Authorization: 'Bearer ' + response.access_token }
+		}).then(r => r.json()).then(info => {
+		  if(info.email) localStorage.setItem('ns_user_hint', info.email);
+		}).catch(() => {});
 		// Small delay to let GIS popup close and browser settle before firing API calls
 		setTimeout(() => {
 		  showScreen('feed');
@@ -2148,6 +2155,7 @@ function changeApiKey(){
   googleAccessToken = null;
   localStorage.removeItem('ns_token');
   localStorage.removeItem('ns_token_expiry');
+  localStorage.removeItem('ns_user_hint'); 
   showScreen('setup');
 }
 
@@ -2458,6 +2466,7 @@ window.addEventListener('load', () => {
       // Token expired or missing — need fresh login
       localStorage.removeItem('ns_token');
       localStorage.removeItem('ns_token_expiry');
+	  // hint stays in localStorage — needed for silent refresh
       startGoogleAuth();
     }
   } else {
