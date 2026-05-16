@@ -1733,7 +1733,7 @@ async function searchChannel(query){
 
   // Get full channel details (for subscriber count & avatar)
   const detail = await ytApi('channels', {
-    part:'snippet,statistics', id:channelId
+    part:'snippet,statistics,contentDetails', id:channelId
   });
 
   if(!detail.items?.length) throw new Error('Could not load channel details');
@@ -1745,6 +1745,7 @@ async function searchChannel(query){
     handle: ch.snippet.customUrl || handle,
     avatar: ch.snippet.thumbnails?.medium?.url || ch.snippet.thumbnails?.default?.url || '',
     subs:   ch.statistics?.subscriberCount || '0',
+    uploadsId: ch.contentDetails?.relatedPlaylists?.uploads || '',
   };
 }
 
