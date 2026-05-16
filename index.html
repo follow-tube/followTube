@@ -36,7 +36,7 @@ html{height:100%;overflow:hidden}
   --border2:  rgba(255,255,255,0.15);
   --text:     #f0f0ee;
   --muted:    #888884;
-  --faint:    #444440;
+  --faint:    #616160;
   --accent:   #e8ff5a;
   --accent2:  #ff6b35;
   --danger:   #ff4444;
@@ -1640,7 +1640,6 @@ function startGoogleAuth(){
     gisTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/youtube.readonly',
-      prompt: '',
 	  hint: localStorage.getItem('ns_user_hint') || '',
       callback: (response) => {
         if(response.error){
@@ -1671,7 +1670,11 @@ function startGoogleAuth(){
 
   // Try silent first — only show account picker on first ever login
   const hasLoggedInBefore = STORE.isOAuth;
-  gisTokenClient.requestAccessToken({ prompt: hasLoggedInBefore ? '' : 'select_account' });
+  if(hasLoggedInBefore){
+    gisTokenClient.requestAccessToken({});
+  } else {
+    gisTokenClient.requestAccessToken({ prompt: 'select_account' });
+  }
 }
 
 // handleOAuthCallback no longer needed — GIS doesn't use URL redirects
