@@ -1677,7 +1677,7 @@ function scheduleTokenRefresh(){
         scheduleTokenRefresh(); // Schedule next refresh
       },
     });
-    gisTokenClient.requestAccessToken({});
+    gisTokenClient.requestAccessToken({ prompt: '', hint });
   }, 57 * 60 * 1000); // 50 minutes
 }
 
@@ -1734,12 +1734,14 @@ function startGoogleAuth(){
       localStorage.setItem('ns_token_expiry', tokenExpiry);
       STORE.isOAuth = true;
       scheduleTokenRefresh();
-      // Store email hint for future silent refreshes
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: 'Bearer ' + response.access_token }
-      }).then(r => r.json()).then(info => {
-        if(info.email) localStorage.setItem('ns_user_hint', info.email);
-      }).catch(() => {});
+      // Store email hint using tokeninfo — works with youtube.readonly scope
+      if(!localStorage.getItem('ns_user_hint')){
+        fetch('https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=' + response.access_token)
+          .then(r => r.json())
+          .then(info => {
+            if(info.email) localStorage.setItem('ns_user_hint', info.email);
+          }).catch(() => {});
+      }
       setTimeout(() => {
         showScreen('feed');
         if(!STORE.channels.length) showScreen('channels');
@@ -1771,9 +1773,10 @@ const ytApi = (path, params) => {
     googleAccessToken = null;
     localStorage.removeItem('ns_token');
     localStorage.removeItem('ns_token_expiry');
-    // Don't reject immediately — trigger silent refresh and let it retry
-    startGoogleAuth();
-    return Promise.reject(new Error('Refreshing session…'));
+    // Show welcome screen — never call startGoogleAuth() directly from here
+    const hint = localStorage.getItem('ns_user_hint');
+    if(hint){ showScreen('welcome'); } else { showScreen('setup'); }
+    return Promise.reject(new Error('Session expired'));
   }
   headers['Authorization'] = 'Bearer ' + googleAccessToken;
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
@@ -1784,7 +1787,8 @@ const ytApi = (path, params) => {
       googleAccessToken = null;
       localStorage.removeItem('ns_token');
       localStorage.removeItem('ns_token_expiry');
-      startGoogleAuth();
+      const hint = localStorage.getItem('ns_user_hint');
+      if(hint){ showScreen('welcome'); } else { showScreen('setup'); }
       throw new Error('Session expired — please sign in again.');
     }
     // Surface any other API errors so callers' catch blocks handle them
