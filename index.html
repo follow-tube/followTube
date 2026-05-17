@@ -1657,19 +1657,18 @@ let tokenRefreshTimer = null;
 
 function scheduleTokenRefresh(){
   if(tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
-  // Refresh at 50 minutes (token lasts 1 hour)
-  // Only works while app is open — that's the point
+  // Calculate how long until we should refresh (50 min from now, or sooner if token expires sooner)
+  const msUntilExpiry = tokenExpiry - Date.now();
+  const msUntilRefresh = Math.max(0, msUntilExpiry - (10 * 60 * 1000)); // 10 min before expiry
   tokenRefreshTimer = setTimeout(() => {
     const hint = localStorage.getItem('ns_user_hint') || '';
     if(!hint) return;
-    // Re-init with fresh hint and request silently
-    // User is actively on the page here so GIS can do this without UI
     gisTokenClient = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID,
       scope: 'https://www.googleapis.com/auth/youtube.readonly',
       hint,
       callback: (response) => {
-        if(response.error) return; // Silent fail is fine — next open will prompt
+        if(response.error) return; // Silent fail is fine — next open will show welcome screen
         googleAccessToken = response.access_token;
         tokenExpiry = Date.now() + (parseInt(response.expires_in) * 1000);
         localStorage.setItem('ns_token', googleAccessToken);
@@ -1678,7 +1677,7 @@ function scheduleTokenRefresh(){
       },
     });
     gisTokenClient.requestAccessToken({ prompt: '', hint });
-  }, 57 * 60 * 1000); // 50 minutes
+  }, msUntilRefresh);
 }
 
 function continueSession(){
@@ -2548,6 +2547,7 @@ window.addEventListener('load', () => {
     if(googleAccessToken && Date.now() < tokenExpiry){
       // Valid token in localStorage — restore session directly
       const savedTab = localStorage.getItem('ns_active_tab') || 'feed';
+      scheduleTokenRefresh(); // Keep token alive while app is open
       showScreen(savedTab);
     } else {
       // Token expired — show welcome back screen, user taps to re-auth
