@@ -188,21 +188,22 @@ footer a{color:var(--muted);}
 <div class="page-wrap">
   <div class="page-label">Legal</div>
   <h1>Privacy Policy</h1>
-  <div class="last-updated">Last updated: 10 May 2026</div>
+  <div class="last-updated">Last updated: 17 May 2026</div>
 
   <div class="intro-box">
-    <strong>Short version:</strong> NoSuggest does not collect, store, or share any of your personal data.
-    Your Google sign-in is handled entirely by Google. We never see your password, email,
-    or any personal information — all data stays in your browser only.
+    <strong>Short version:</strong> NoSuggest does not collect, store, or share your personal data on any server.
+    Your Google sign-in is handled entirely by Google. We never see your password.
+    Your email address is stored only in your browser to enable seamless session restoration — it never leaves your device.
   </div>
 
   <h2>1. Who We Are</h2>
   <p>NoSuggest is a free, open-source web application that allows users to follow YouTube channels, search for videos, save videos to watch later, and watch them — without NoSuggest pushing algorithmic recommendations or tracking your behaviour. NoSuggest will never send you notifications, autoplay videos, or suggest what to watch next. You come when you want, watch what you chose, and leave. That's the whole experience. The app is available at <a href="https://nosuggest.com/">nosuggest.com</a>.</p>
 
   <h2>2. What Data We Collect</h2>
-  <p><strong>We collect no personal data.</strong> Specifically:</p>
+  <p><strong>We collect no personal data on any server.</strong> Specifically:</p>
   <ul>
-    <li>We do not collect your name, email address, or any account information</li>
+    <li>We do not collect your name or any account information on our end</li>
+    <li>Your email address is used solely to enable seamless session restoration — it is stored only in your browser's localStorage and is never sent to any server we operate</li>
     <li>We do not use analytics, tracking pixels, or cookies of any kind</li>
     <li>We do not run any backend servers — the app runs entirely in your browser</li>
     <li>We do not log your usage, viewing history, or behaviour</li>
@@ -211,11 +212,12 @@ footer a{color:var(--muted);}
   <h2>3. Google Sign-In and YouTube Data</h2>
   <p>NoSuggest offers optional sign-in with Google to access the YouTube Data API. Here is exactly what happens:</p>
   <ul>
-    <li><strong>Sign-in is handled by Google</strong> — we never see your Google password or email</li>
-    <li>Google issues a temporary access token to your browser. This token is stored only in your browser's memory and is never sent to any server we operate</li>
+    <li><strong>Sign-in is handled by Google</strong> — we never see your Google password</li>
+    <li>Google issues a temporary access token to your browser. This token is stored only in your browser's localStorage and is never sent to any server we operate</li>
     <li>We use this token solely to fetch public video information from YouTube channels you add, and to search YouTube — we access no private account data</li>
-    <li>We request only the <code>youtube.readonly</code> permission, which allows reading public YouTube data only — we cannot post, like, subscribe, or make any changes to your YouTube account</li>
-    <li>Your token expires automatically (typically within 1 hour) and is cleared when you close the app</li>
+    <li>We request the <code>youtube.readonly</code> permission, which allows reading public YouTube data only — we cannot post, like, subscribe, or make any changes to your YouTube account</li>
+    <li>We request the <code>email</code> permission solely to enable seamless session restoration — so you are not asked to select your Google account every time your session expires. Your email is stored only in your browser and never sent to any server we operate</li>
+    <li>Your token expires automatically (typically within 1 hour) and is cleared when you sign out</li>
   </ul>
 
   <div class="highlight-box">
@@ -229,6 +231,7 @@ footer a{color:var(--muted);}
     <li>Videos you have saved to watch later (video ID, title, channel name, and thumbnail — never sent anywhere)</li>
     <li>A temporary cache of video information per channel, to reduce API usage (cleared automatically after 3 hours or via Settings)</li>
     <li>A marker indicating you previously signed in with Google, so the app can restore your session on reload (contains no personal data)</li>
+    <li>Your Google account email address, stored to enable seamless session restoration without repeated account selection — stored only in your browser, never sent anywhere</li>
     <li>Your last active tab, so the app reopens on the same screen</li>
   </ul>
   <p>You can clear all stored data at any time from the app's Settings screen, or by clearing your browser's local storage.</p>
