@@ -6,25 +6,25 @@
 
   <!-- Main app -->
   <url>
-    <loc>https://nosuggest.com/</loc>
+    <loc>https://www.nosuggest.com/</loc>
     <priority>1.0</priority>
   </url>
 
   <!-- Privacy Policy -->
   <url>
-    <loc>https://nosuggest.com/privacy</loc>
+    <loc>https://www.nosuggest.com/privacy</loc>
     <priority>0.5</priority>
   </url>
 
   <!-- Terms of Service -->
   <url>
-    <loc>https://nosuggest.com/terms</loc>
+    <loc>https://www.nosuggest.com/terms</loc>
     <priority>0.5</priority>
   </url>
 
   <!-- Contact -->
   <url>
-    <loc>https://nosuggest.com/contact</loc>
+    <loc>https://www.nosuggest.com/contact</loc>
     <priority>0.3</priority>
   </url>
 
