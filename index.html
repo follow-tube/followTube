@@ -2799,10 +2799,9 @@ async function doYTSearch(){
       id: ids,
     });
 
-    // Sort by view count descending and take top 5
+    // Sort by view count descending and take top 10
     const videos = (details.items || [])
       .sort((a, b) => parseInt(b.statistics?.viewCount||0) - parseInt(a.statistics?.viewCount||0))
-      .slice(0, 5)
       .map(v => ({
         id:          v.id,
         title:       v.snippet.title,
