@@ -180,6 +180,7 @@ body{
   padding:0;
 }
 
+.screen-body{
   flex:1;
   overflow-y:auto;
   overflow-x:hidden;
@@ -861,6 +862,17 @@ body{
   border:none;
   max-height:60vh;
 }
+
+/* Kids Mode — transparent overlay blocks taps on iframe end-screen links */
+.player-kids-guard{
+  position:absolute;
+  inset:0;
+  z-index:10;
+  display:none;
+  background:transparent;
+  cursor:default;
+}
+.player-kids-guard.show{ display:block; }
 
 .player-info{
   padding:0 1.25rem calc(var(--safe-bot) + 1rem);
@@ -1585,8 +1597,9 @@ body{
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
-    <div class="player-video-wrap">
+    <div class="player-video-wrap" style="position:relative">
       <div id="player-iframe"></div>
+      <div class="player-kids-guard" id="player-kids-guard"></div>
     </div>
     <div class="player-info">
       <div class="player-title" id="player-title"></div>
@@ -1860,7 +1873,7 @@ function handlePinComplete(){
   } else if(pinMode === 'verify-disable'){
     if(pinBuffer === STORE.kidsPin){
       STORE.kidsMode = false;
-      STORE.kidsPin = ''; // Reset PIN so next enable requires a fresh one
+      STORE.kidsPin = ''; // Reset PIN — next enable requires a fresh one
       closePinOverlay();
       applyKidsMode();
       toast('Kids Mode disabled');
@@ -1925,6 +1938,13 @@ function applyKidsMode(){
   // Show/hide nav buttons
   document.getElementById('nav-search').style.display   = on ? 'none' : '';
   document.getElementById('nav-channels').style.display = on ? 'none' : '';
+  // Block iframe taps in Kids Mode
+  const guard = document.getElementById('player-kids-guard');
+  if(guard) guard.classList.toggle('show', on);
+  // Hide all YouTube ↗ channel links in Kids Mode
+  document.querySelectorAll('.ch-link').forEach(el => {
+    el.style.display = on ? 'none' : '';
+  });
   // If currently on a hidden screen, redirect to feed
   if(on && (currentScreen === 'search' || currentScreen === 'channels' || currentScreen === 'add')){
     showScreen('feed');
@@ -2203,6 +2223,7 @@ async function loadChannelVideos(ch){
       setCachedVideos(ch.id, videos);
     }
     renderVideos(ch, videos);
+    applyKidsLinkHiding();
   } catch(e){
     const el = document.getElementById(`videos-${ch.id}`);
     if(el) el.innerHTML = `<div style="padding:1rem;font-size:13px;color:var(--faint)">Could not load videos</div>`;
@@ -2295,6 +2316,15 @@ function renderVideos(ch, videos){
       </div>
     </div>`;
   }).join('');
+}
+
+// After each channel renders, reapply Kids Mode link hiding
+// since .ch-link elements are created dynamically
+function applyKidsLinkHiding(){
+  if(!STORE.kidsMode) return;
+  document.querySelectorAll('.ch-link').forEach(el => {
+    el.style.display = 'none';
+  });
 }
 
 document.getElementById('feed-refresh-btn').onclick = () => {
@@ -2769,9 +2799,10 @@ async function doYTSearch(){
       id: ids,
     });
 
-    // Sort by view count descending — show all 10
+    // Sort by view count descending and take top 5
     const videos = (details.items || [])
       .sort((a, b) => parseInt(b.statistics?.viewCount||0) - parseInt(a.statistics?.viewCount||0))
+      .slice(0, 5)
       .map(v => ({
         id:          v.id,
         title:       v.snippet.title,
